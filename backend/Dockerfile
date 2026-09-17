@@ -14,8 +14,9 @@ COPY backend/package*.json ./
 
 RUN npm ci
 
-# Backend source
+# Backend source & static web client
 COPY backend/src ./src
+COPY backend/public ./public
 
 # Database migrations
 COPY database ./database
@@ -38,6 +39,7 @@ RUN mkdir -p /usr/src/app/uploads && \
 COPY --from=builder --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /usr/src/app/package*.json ./
 COPY --from=builder --chown=node:node /usr/src/app/src ./src
+COPY --from=builder --chown=node:node /usr/src/app/public ./public
 COPY --from=builder --chown=node:node /usr/src/app/database ./database
 
 USER node
