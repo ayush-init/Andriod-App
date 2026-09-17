@@ -12,8 +12,8 @@ async function runMigrations() {
   try {
     const health = await db.checkHealth();
     console.log(`✅ Database connected! Server Version: ${health.version.split(' ')[0]} (${health.latencyMs}ms latency)`);
-    
-    const migrationPath = path.resolve(__dirname, '../../../database/migrations/001_initial_schema.sql');
+   
+    const migrationPath = path.resolve(__dirname, '../../database/migrations/001_initial_schema.sql');
     console.log(`📜 Reading migration file: ${migrationPath}`);
     
     const sql = fs.readFileSync(migrationPath, 'utf8');

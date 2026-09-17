@@ -4,17 +4,17 @@
   # ==========================================
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: roxstar-backend
     restart: unless-stopped
     ports:
-      - "5000:5000"
+    - "127.0.0.1:5000:5000"
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - DATABASE_URL=\
-      - DB_SSL=\
+      - DATABASE_URL=postgresql://neondb_owner:npg_2alIkCDe3OcZ@ep-tiny-art-b5pp65kt-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - DB_SSL=true
       - CORS_ORIGIN=*
       - LOG_LEVEL=info
     volumes:
@@ -40,8 +40,6 @@
     image: postgres:16-alpine
     container_name: roxstar-postgres
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres_password
