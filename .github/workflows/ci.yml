@@ -44,14 +44,14 @@ jobs:
       - name: Run Database Migrations
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://postgres:testpassword@localhost:5432/roxstar_test_db
+          DATABASE_URL: postgresql://postgres:testpassword@127.0.0.1:5432/roxstar_test_db
           DB_SSL: 'false'
         run: npm run migrate
 
       - name: Run Backend Tests
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://postgres:testpassword@localhost:5432/roxstar_test_db
+          DATABASE_URL: postgresql://postgres:testpassword@127.0.0.1:5432/roxstar_test_db
           DB_SSL: 'false'
           PORT: 5000
         run: npm test

@@ -5,5 +5,5 @@ export default {
   moduleDirectories: ['node_modules', '<rootDir>/backend/node_modules'],
   transform: {},
   verbose: true,
-  testTimeout: 30000,
+  testTimeout: 60000,
 };

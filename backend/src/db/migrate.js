@@ -10,7 +10,17 @@ async function runMigrations() {
   console.log('🔄 Connecting to PostgreSQL database...');
   
   try {
-    const health = await db.checkHealth();
+    let health = null;
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      try {
+        health = await db.checkHealth();
+        break;
+      } catch (err) {
+        if (attempt === 10) throw err;
+        console.log(`⏳ Waiting for database connection (attempt ${attempt}/10)...`);
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
     console.log(`✅ Database connected! Server Version: ${health.version.split(' ')[0]} (${health.latencyMs}ms latency)`);
    
     let migrationPath = path.resolve(__dirname, '../../../database/migrations/001_initial_schema.sql');

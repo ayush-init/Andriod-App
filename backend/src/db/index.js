@@ -29,9 +29,9 @@ export async function getPool() {
   const password = decodeURIComponent(parsedUrl.password);
   const database = parsedUrl.pathname.replace(/^\//, '');
 
-  let hostToConnect = hostname;
-  // If not localhost, resolve IPv4 to prevent Windows Node v24 dual-stack IPv6 timeout
-  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+  let hostToConnect = (hostname === 'localhost') ? '127.0.0.1' : hostname;
+  // If not 127.0.0.1, resolve IPv4 to prevent dual-stack IPv6 timeout
+  if (hostToConnect !== '127.0.0.1') {
     try {
       const ipv4List = await dns.resolve4(hostname);
       if (ipv4List && ipv4List.length > 0) {
@@ -43,7 +43,7 @@ export async function getPool() {
     }
   }
 
-  const isSsl = rawUrl.includes('sslmode=require') || !['localhost', '127.0.0.1'].includes(hostname);
+  const isSsl = rawUrl.includes('sslmode=require') || (!['localhost', '127.0.0.1'].includes(hostname) && !rawUrl.includes('DB_SSL=false'));
 
   pool = new Pool({
     host: hostToConnect,

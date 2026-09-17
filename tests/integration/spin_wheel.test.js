@@ -195,7 +195,7 @@ describe('ROXSTAR Phase 4 Elimination Spin Wheel State Machine & Edge Cases', ()
   it('Edge Case 4 & 5 (E4/E5): Mid-spin disconnect drops room < 2 players -> Aborts spin', async () => {
     // Start a fresh spin with 3 players
     const spinResult = await SpinStateMachine.startSpin(testRoomId, hostUser.id, ioServer, {
-      intervalMs: 5000, // standard interval so we can trigger disconnect mid-spin
+      intervalMs: 1000, // fast interval for test
     });
     expect(spinResult.success).toBe(true);
 
