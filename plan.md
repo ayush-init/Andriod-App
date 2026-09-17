@@ -103,14 +103,14 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### ⚡ Phase 2: Backend REST APIs & Audio Upload Hosting (Section B1 & D1, D3 - 35 pts)
-- [ ] Setup Node.js backend with Express, CORS, and structured logging
-- [ ] Implement Health/Readiness endpoint (`GET /health`) with live DB ping
-- [ ] Implement User identity endpoint (`POST /api/users`)
-- [ ] Implement Audio Draft Upload & Hosting:
+- [x] Setup Node.js backend with Express, CORS, and structured logging
+- [x] Implement Health/Readiness endpoint (`GET /health`) with live DB ping
+- [x] Implement User identity endpoint (`POST /api/users`)
+- [x] Implement Audio Draft Upload & Hosting:
   - `POST /api/drafts/upload` (multipart/form-data upload using `multer`)
   - Static file serving at `/uploads`
   - Persist draft record in PostgreSQL `drafts` table with full file URL
-- [ ] Implement Room Management REST APIs:
+- [x] Implement Room Management REST APIs:
   - `POST /api/rooms` - Create Room (creates room, adds host as first member)
   - `GET /api/rooms` - List Active Rooms
   - `GET /api/rooms/:id` - Get Room State & Participant List
@@ -118,13 +118,13 @@ README.md                 # Setup, manual verification guide & submission docume
   - `POST /api/rooms/:id/leave` - Leave Room
   - `POST /api/rooms/:id/drafts` - Share Draft with Room
   - `GET /api/rooms/:id/drafts` - List Shared Drafts in Room
-- [ ] Implement input validation (zod), error handling middleware, and idempotency guards
-- [ ] Write integration test suite (`tests/integration/room_api.test.js`)
-- [ ] Commit and push Phase 2 to GitHub
+- [x] Implement input validation (zod), error handling middleware, and idempotency guards
+- [x] Write integration test suite (`tests/integration/room_api.test.js`) - 13/13 tests passing
+- [x] Commit and push Phase 2 to GitHub
 - 🔍 **Manual Verification Checklist**:
-  1. Open browser/cURL to `GET /health` -> returns `{ status: "ok", db: "connected" }`.
-  2. Test `POST /api/drafts/upload` with a sample audio file -> returns hosted URL.
-  3. Call `POST /api/rooms` and `POST /api/rooms/:id/join` -> verify room state.
+  1. Run `npm test` -> 13 passing integration tests covering all routes.
+  2. Start server (`npm start`) and open `http://localhost:5000/health` in browser.
+  3. Verify Room create, join, draft sharing, and leaving flows.
 
 ---
 
@@ -266,8 +266,9 @@ README.md                 # Setup, manual verification guide & submission docume
 
 ## Current Status & Next Immediate Step
 
-- **Current Active Phase**: **Phase 2: Backend REST APIs & Audio Upload Hosting**
+- **Current Active Phase**: **Phase 3: Real-Time WebSocket Engine & Room Presence**
 - **Status**: READY TO EXECUTE
 - **Completed**: 
   - Phase 0: Repository scaffolding, git configuration, remote push to GitHub
   - Phase 1: Database Engineering & PostgreSQL Migrations (7 tables, partial unique index, migration scripts, connection pool tested with Neon DB)
+  - Phase 2: Backend REST APIs & Audio Upload Hosting (Express server, Multer upload, Room lifecycle APIs, Zod validation, 13/13 passing tests)
