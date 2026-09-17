@@ -84,6 +84,12 @@ dependencies {
     // JSON persistence for voice drafts
     implementation(libs.google.gson)
 
+    // Networking: OkHttp & Socket.IO client
+    implementation(libs.okhttp)
+    implementation(libs.socket.io.client) {
+        exclude(group = "org.json", module = "json") // Use Android's built-in org.json
+    }
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 

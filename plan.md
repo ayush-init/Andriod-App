@@ -211,22 +211,22 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### 📱 Phase 6: Android Room & Multiplayer Spin Wheel UI (Section B & C Frontend)
-- [ ] Integrate Socket.IO Android client library
-- [ ] Connect Android Draft Studio to Backend:
-  - Upload local draft to backend (`POST /api/drafts/upload`)
-- [ ] Build Room UI:
-  - Create Room & Browse/Join Room screen
-  - Live Room view: participant avatars, host badge, real-time presence indicators
-  - "Share Draft" button: select a saved draft from Phase 5 and broadcast to room
-  - Audio Player for shared drafts inside room
-- [ ] Build Spin Wheel Multiplayer View:
-  - Visual Wheel / Participant Circle showing 3-20 active players
+- [x] Integrate Socket.IO Android client library (`socket.io-client:2.1.1` and `okhttp:4.12.0`)
+- [x] Connect Android Draft Studio to Backend:
+  - Upload local draft to backend (`POST /api/drafts/upload`) via `ApiClient.kt`
+- [x] Build Room UI:
+  - Create Room & Browse/Join Room screen (`LobbyScreen.kt`)
+  - Live Room view: participant avatars, host badge, real-time presence indicators (`RoomScreen.kt`)
+  - "Share Take" button: select a saved draft from Phase 5 and broadcast to room
+  - Audio Player for shared drafts inside room (`MediaPlayer` streaming)
+- [x] Build Spin Wheel Multiplayer View:
+  - Visual Wheel / Participant Grid showing 3-20 active players (`SpinWheelArena.kt`)
   - "Start Spin" button (enabled only for Room Host when eligible players >= 3)
-  - Real-time 5-second countdown animation for eliminations
-  - Visual elimination animation (fade/cross out eliminated players)
-  - Winner Celebration Dialog showing winner avatar and virtual points
-  - Reconnection banner with automatic state sync
-- [ ] Commit and push Phase 6 to GitHub
+  - Real-time 5-second countdown progress bar and ticker for eliminations
+  - Visual elimination animation (strikethrough name and red card)
+  - Winner Celebration Dialog showing winner avatar, trophy icon, and virtual points (+50 pts)
+  - Reconnection and room state sync
+- [x] Commit and push Phase 6 to GitHub
 - 🔍 **Manual Verification Checklist**:
   1. Open Android App as User A and Browser Client as User B & C.
   2. User A creates Room; User B & C join. Android app shows all 3 users in real-time.

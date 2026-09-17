@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.roxstar.audio.ui.drafts.DraftsScreen
+import com.roxstar.audio.ui.room.LobbyScreen
+import com.roxstar.audio.ui.room.RoomScreen
+import com.roxstar.audio.ui.room.RoomViewModel
 import com.roxstar.audio.ui.studio.StudioScreen
 import com.roxstar.audio.ui.studio.StudioViewModel
 import com.roxstar.audio.ui.theme.DarkBackground
@@ -25,6 +29,7 @@ import com.roxstar.audio.ui.theme.RoxstarTheme
 class MainActivity : ComponentActivity() {
 
     private val studioViewModel: StudioViewModel by viewModels()
+    private val roomViewModel: RoomViewModel by viewModels()
 
     private var hasRecordAudioPermission by mutableStateOf(false)
 
@@ -46,6 +51,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             RoxstarTheme {
                 var selectedTab by remember { mutableStateOf(0) }
+                val currentRoom by roomViewModel.currentRoom.collectAsState()
 
                 Scaffold(
                     containerColor = DarkBackground,
@@ -64,6 +70,12 @@ class MainActivity : ComponentActivity() {
                                 onClick = { selectedTab = 1 },
                                 icon = { Icon(Icons.Default.Folder, contentDescription = "Drafts") },
                                 label = { Text("Drafts") }
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
+                                icon = { Icon(Icons.Default.Group, contentDescription = "Rooms") },
+                                label = { Text(if (currentRoom != null) "In Room" else "Rooms") }
                             )
                         }
                     }
@@ -85,6 +97,24 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(innerPadding)
                         )
+                        2 -> {
+                            if (currentRoom == null) {
+                                LobbyScreen(
+                                    viewModel = roomViewModel,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding)
+                                )
+                            } else {
+                                RoomScreen(
+                                    room = currentRoom!!,
+                                    viewModel = roomViewModel,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding)
+                                )
+                            }
+                        }
                     }
                 }
             }
