@@ -15,19 +15,10 @@ data class Room(
     val id: String = "",
     @SerializedName(value = "name", alternate = ["title"]) val name: String = "",
     @SerializedName(value = "host_id", alternate = ["owner_id"]) val hostId: String = "",
-    @SerializedName(value = "participant_count", alternate = ["online_participants_count"]) val participantCountRaw: Any? = 1,
+    @SerializedName(value = "participant_count", alternate = ["online_participants_count"]) val participantCount: Int = 1,
     @SerializedName(value = "members", alternate = ["participants"]) val members: List<RoomMember> = emptyList(),
     @SerializedName(value = "shared_drafts", alternate = ["drafts"]) val sharedDrafts: List<SharedDraft> = emptyList()
-) {
-    val participantCount: Int
-        get() {
-            return when (participantCountRaw) {
-                is Number -> participantCountRaw.toInt()
-                is String -> participantCountRaw.toIntOrNull() ?: 1
-                else -> 1
-            }
-        }
-}
+)
 
 data class RoomMember(
     @SerializedName(value = "user_id", alternate = ["id"]) val userId: String = "",
