@@ -1,11 +1,807 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=/test-client.html" />
-  <title>ROXSTAR - Redirecting...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROXSTAR - Live Room Arena & Multiplayer Web Portal</title>
+  <style>
+    :root {
+      --bg: #0f111a;
+      --card-bg: #1a1d2e;
+      --card-border: #2a2e45;
+      --text-main: #f0f2fd;
+      --text-muted: #8b92b2;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #ec4899;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-connected { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .badge-disconnected { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    .badge-host { background: rgba(236, 72, 153, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-participant { background: rgba(99, 102, 241, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quick-users {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #374151; }
+    .btn-secondary:hover { background: #4b5563; }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-accent { background: var(--accent); }
+    .btn-accent:hover { background: #db2777; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    input, select {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus { outline: 2px solid var(--primary); }
+
+    .participants-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .participant-card {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #2a2e45;
+    }
+    .p-info { display: flex; flex-direction: column; gap: 2px; }
+    .p-name { font-weight: 600; font-size: 0.9rem; }
+    .p-role { font-size: 0.75rem; color: var(--text-muted); }
+
+    .event-log {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      height: 280px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .event-entry {
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--card-border);
+      word-break: break-all;
+    }
+    .event-entry.user_joined { border-left-color: var(--success); }
+    .event-entry.user_left { border-left-color: var(--danger); }
+    .event-entry.draft_shared { border-left-color: #38bdf8; }
+    .event-entry.room_state { border-left-color: var(--accent); }
+    .event-entry.spin_started { border-left-color: var(--warning); }
+    .event-entry.user_eliminated { border-left-color: var(--danger); }
+    .event-entry.winner_announced { border-left-color: #a855f7; }
+
+    .drafts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .draft-item {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    audio { height: 32px; max-width: 220px; }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <p>Redirecting to <a href="/test-client.html">ROXSTAR Test Client</a>...</p>
+  <div class="container">
+    <header>
+      <h1>🎙️ ROXSTAR Live Room & Multiplayer Arena</h1>
+      <div id="connectionStatus" class="badge badge-disconnected">● Disconnected</div>
+    </header>
+
+    <div class="grid-2">
+      <!-- User & Room Setup Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>👤 User Identity & Room Setup</span>
+          <div class="quick-users">
+            <button class="btn btn-secondary" onclick="quickSelect('alice')">Alice (Host)</button>
+            <button class="btn btn-secondary" onclick="quickSelect('bob')">Bob (P1)</button>
+            <button class="btn btn-secondary" onclick="quickSelect('charlie')">Charlie (P2)</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="usernameInput" placeholder="e.g. alice_host" value="alice_host" />
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" onclick="authenticateUser()">1. Authenticate User</button>
+          <span id="userInfo" style="font-size: 0.85rem; color: var(--text-muted); align-self: center;">Not authenticated</span>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--card-border);" />
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin: 0; font-weight: 600;">Select Active Room</label>
+            <button class="btn btn-secondary" style="padding: 3px 10px; font-size: 0.75rem;" onclick="fetchRooms()">🔄 Refresh Rooms</button>
+          </div>
+          <select id="roomSelect" onchange="onRoomSelected(this.value)" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: #fff; border-radius: 6px;">
+            <option value="">-- Choose an active room --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Room ID or Create New</label>
+          <input type="text" id="roomIdInput" placeholder="Enter Room UUID or select from above" />
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-accent" onclick="createRoom()">Create Room</button>
+          <button class="btn" onclick="joinRoomSocket()">2. Join Room (Socket)</button>
+          <button class="btn btn-danger" onclick="leaveRoomSocket()">Leave Room</button>
+        </div>
+      </div>
+
+      <!-- Active Participants Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 Active Room Participants</span>
+          <span id="participantCount" class="badge badge-participant">0 Users Online</span>
+        </div>
+        <div id="participantsList" class="participants-list">
+          <div style="color: var(--text-muted); font-size: 0.9rem;">Join a room to see online members.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice Draft Sharing & Jukebox -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎵 Voice Drafts & In-Room Jukebox</span>
+        <button class="btn btn-secondary" onclick="shareSampleDraft()">Share Sample Draft</button>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Draft Title</label>
+          <input type="text" id="draftTitleInput" value="Roxstar Echo Take 1" />
+          <label style="margin-top: 8px;">Audio URL</label>
+          <input type="text" id="draftUrlInput" value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" />
+          <button class="btn" style="margin-top: 10px;" onclick="uploadAndShareDraft()">Share Draft to Room</button>
+        </div>
+        <div>
+          <label>Shared Room Audio Recordings</label>
+          <div id="draftsList" class="drafts-list" style="margin-top: 6px;">
+            <div style="color: var(--text-muted); font-size: 0.85rem;">No drafts shared in this room yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎡 Real-Time Spin Wheel Arena Card -->
+    <div class="card" style="border: 2px solid var(--primary);">
+      <div class="card-title">
+        <span>🎡 Real-Time Elimination Spin Wheel (Section C)</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span id="spinStatusBadge" class="badge badge-host">STATUS: WAITING</span>
+          <span id="spinCountdownBadge" class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); display: none;">⏱️ 5s</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <button id="startSpinBtn" class="btn btn-accent" style="padding: 10px 24px; font-size: 1rem;" onclick="startSpinWheel()">
+          🚀 1. Start Spin Wheel (Host Only)
+        </button>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Requires $\ge 3$ online participants. 5-second server-authoritative elimination rounds.</span>
+      </div>
+
+      <!-- Edge Cases Quick-Test Bar -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--card-border); border-radius: 8px; padding: 10px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Quick Edge Case Tests:</span>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E1')">E1: Less than 3 players</button>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E2')">E2: Non-host triggers</button>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E3')">E3/E9: Rapid double-click</button>
+      </div>
+
+      <!-- Winner Fanfare Banner -->
+      <div id="winnerBanner" style="display: none; background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(99,102,241,0.2)); border: 2px solid var(--accent); border-radius: 8px; padding: 16px; text-align: center;">
+        <h2 style="color: #fbbf24; font-size: 1.5rem;">👑 WINNER DECLARED! 👑</h2>
+        <div id="winnerText" style="font-size: 1.1rem; margin-top: 6px;"></div>
+      </div>
+
+      <!-- Active Spin Players Grid -->
+      <div>
+        <label>Spin Seats & Real-Time Elimination Status</label>
+        <div id="spinPlayersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 8px;">
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Start a spin to populate player seats.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Event Stream Log -->
+    <div class="card">
+      <div class="card-title">
+        <span>⚡ Real-Time WebSocket Event Stream</span>
+        <button class="btn btn-secondary" onclick="clearEventLog()">Clear</button>
+      </div>
+      <div id="eventLog" class="event-log"></div>
+    </div>
+  </div>
+
+  <script>
+    let socket = null;
+    let currentUser = null;
+    let currentRoomId = null;
+
+    const quickUsers = {
+      alice: { username: 'alice_host', display_name: 'Alice (Host)' },
+      bob: { username: 'bob_player', display_name: 'Bob (Player)' },
+      charlie: { username: 'charlie_player', display_name: 'Charlie (Player)' }
+    };
+
+    function quickSelect(userKey) {
+      const u = quickUsers[userKey];
+      if (u) {
+        document.getElementById('usernameInput').value = u.username;
+        authenticateUser();
+      }
+    }
+
+    function logEvent(type, payload) {
+      const log = document.getElementById('eventLog');
+      const entry = document.createElement('div');
+      entry.className = `event-entry ${type}`;
+      const time = new Date().toLocaleTimeString();
+      entry.innerHTML = `<strong>[${time}] ${type}</strong>: ${JSON.stringify(payload)}`;
+      log.prepend(entry);
+    }
+
+    function clearEventLog() {
+      document.getElementById('eventLog').innerHTML = '';
+    }
+
+    async function fetchRooms() {
+      try {
+        const res = await fetch('/api/rooms');
+        const data = await res.json();
+        const select = document.getElementById('roomSelect');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Choose an active room --</option>';
+        if (data.success && data.rooms) {
+          data.rooms.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = `${r.title || r.name} (by ${r.owner_username || 'Host'}) - ${r.online_participants_count || 1} online`;
+            select.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load rooms', e);
+      }
+    }
+
+    function onRoomSelected(roomId) {
+      if (roomId) {
+        document.getElementById('roomIdInput').value = roomId;
+      }
+    }
+
+    // Auto-fetch rooms on load
+    window.addEventListener('DOMContentLoaded', fetchRooms);
+
+    // 1. Authenticate user via REST
+    async function authenticateUser() {
+      const username = document.getElementById('usernameInput').value.trim();
+      if (!username) return alert('Enter a username');
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, display_name: username.replace('_', ' ').toUpperCase() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser = data.user;
+          document.getElementById('userInfo').innerHTML = `✅ Logged in: <strong>${currentUser.username}</strong> (ID: ${currentUser.id.substring(0, 8)}...)`;
+          logEvent('auth_success', { user: currentUser.username, id: currentUser.id });
+        } else {
+          alert('Auth error: ' + data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Authentication failed');
+      }
+    }
+
+    // 2. Create room via REST
+    async function createRoom() {
+      if (!currentUser) return alert('Please authenticate first');
+
+      try {
+        const res = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: `${currentUser.username}'s Arena`,
+            owner_id: currentUser.id,
+            max_participants: 10
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentRoomId = data.room.id;
+          document.getElementById('roomIdInput').value = currentRoomId;
+          logEvent('room_created', data.room);
+          joinRoomSocket();
+        } else {
+          alert('Room create failed: ' + data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Create room error');
+      }
+    }
+
+    // 3. Connect Socket & Join Room
+    function joinRoomSocket() {
+      if (!currentUser) return alert('Please authenticate first');
+      const roomId = document.getElementById('roomIdInput').value.trim();
+      if (!roomId) return alert('Please enter or create a Room ID');
+
+      currentRoomId = roomId;
+
+      if (!socket) {
+        socket = io();
+
+        socket.on('connect', () => {
+          const pill = document.getElementById('connectionStatus');
+          pill.className = 'badge badge-connected';
+          pill.innerText = `● Connected (${socket.id})`;
+          logEvent('socket_connect', { socketId: socket.id });
+
+          // Re-join if reconnecting
+          if (currentRoomId && currentUser) {
+            socket.emit('join_room', { room_id: currentRoomId, user_id: currentUser.id });
+          }
+        });
+
+        socket.on('disconnect', (reason) => {
+          const pill = document.getElementById('connectionStatus');
+          pill.className = 'badge badge-disconnected';
+          pill.innerText = '● Disconnected';
+          logEvent('socket_disconnect', { reason });
+        });
+
+        socket.on('room_state', (state) => {
+          logEvent('room_state', state);
+          renderParticipants(state.participants || []);
+          renderDrafts(state.shared_drafts || []);
+        });
+
+        socket.on('user_joined', (data) => {
+          logEvent('user_joined', data);
+          renderParticipants(data.participants || []);
+        });
+
+        socket.on('user_left', (data) => {
+          logEvent('user_left', data);
+          renderParticipants(data.participants || []);
+        });
+
+        socket.on('draft_shared', (draft) => {
+          logEvent('draft_shared', draft);
+          addDraftItem(draft);
+        });
+
+        socket.on('spin_started', (data) => {
+          logEvent('spin_started', data);
+          handleSpinStarted(data);
+        });
+        socket.on('user_eliminated', (data) => {
+          logEvent('user_eliminated', data);
+          handleUserEliminated(data);
+        });
+        socket.on('winner_announced', (data) => {
+          logEvent('winner_announced', data);
+          handleWinnerAnnounced(data);
+        });
+        socket.on('spin_aborted', (data) => {
+          logEvent('spin_aborted', data);
+          handleSpinAborted(data);
+        });
+        socket.on('spin_error', (data) => {
+          logEvent('spin_error', data);
+          alert('Spin Error: ' + data.error);
+        });
+      }
+
+      socket.emit('join_room', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+        if (ack && ack.success) {
+          logEvent('join_room_ack', ack);
+        }
+      });
+    }
+
+    function leaveRoomSocket() {
+      if (!socket || !currentRoomId || !currentUser) return;
+      socket.emit('leave_room', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+        logEvent('leave_room_ack', ack);
+        document.getElementById('participantsList').innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">Left room.</div>';
+        document.getElementById('participantCount').innerText = '0 Users Online';
+      });
+    }
+
+    async function uploadAndShareDraft() {
+      if (!currentUser || !currentRoomId) return alert('Must be in a room');
+      const title = document.getElementById('draftTitleInput').value.trim();
+      const fileUrl = document.getElementById('draftUrlInput').value.trim();
+
+      // Create draft via REST
+      const res = await fetch('/api/drafts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          title,
+          file_url: fileUrl,
+          duration_ms: 5000,
+          effect_applied: 'ECHO'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Emit share_draft over socket
+        socket.emit('share_draft', {
+          room_id: currentRoomId,
+          draft_id: data.draft.id,
+          user_id: currentUser.id
+        });
+      }
+    }
+
+    function shareSampleDraft() {
+      document.getElementById('draftTitleInput').value = `Echo Take by ${currentUser ? currentUser.username : 'Host'}`;
+      uploadAndShareDraft();
+    }
+
+    function renderParticipants(list) {
+      const container = document.getElementById('participantsList');
+      const countBadge = document.getElementById('participantCount');
+      countBadge.innerText = `${list.length} Users Online`;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No participants in room.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(p => `
+        <div class="participant-card">
+          <img class="avatar" src="${p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.username}`}" alt="avatar" />
+          <div class="p-info">
+            <span class="p-name">${p.display_name || p.username}</span>
+            <span class="badge ${p.role === 'HOST' ? 'badge-host' : 'badge-participant'}" style="padding: 2px 6px; font-size: 0.7rem;">${p.role}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDrafts(drafts) {
+      const container = document.getElementById('draftsList');
+      if (!drafts || drafts.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No drafts shared in this room yet.</div>';
+        return;
+      }
+      container.innerHTML = drafts.map(d => formatDraftHtml(d)).join('');
+    }
+
+    function addDraftItem(draft) {
+      const container = document.getElementById('draftsList');
+      if (container.innerText.includes('No drafts')) {
+        container.innerHTML = '';
+      }
+      const div = document.createElement('div');
+      div.innerHTML = formatDraftHtml(draft);
+      container.prepend(div.firstElementChild);
+    }
+
+    function formatDraftHtml(d) {
+      let fileUrl = d.file_url || '';
+      if (fileUrl.includes('/uploads/')) {
+        fileUrl = fileUrl.substring(fileUrl.indexOf('/uploads/'));
+      }
+      const author = d.shared_by_username || d.username || (d.user && (d.user.display_name || d.user.username)) || 'Ayush (Host)';
+      return `
+        <div class="draft-item" style="display: flex; justify-content: space-between; align-items: center; background: #111422; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;">
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem;">${d.title}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+              By: <strong>${author}</strong> &bull; <span class="badge" style="background: rgba(236,72,153,0.15); color: var(--accent); padding: 1px 6px; font-size: 0.65rem;">${d.effect_applied || 'ECHO'}</span>
+            </div>
+          </div>
+          <audio controls src="${fileUrl}" preload="auto" style="height: 36px; max-width: 240px;"></audio>
+        </div>
+      `;
+    }
+
+    let currentSpinPlayers = [];
+    let countdownInterval = null;
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      let sec = 5;
+      const badge = document.getElementById('spinCountdownBadge');
+      badge.style.display = 'inline-flex';
+      badge.innerText = `⏱️ Next: ${sec}s`;
+      countdownInterval = setInterval(() => {
+        sec -= 1;
+        if (sec > 0) {
+          badge.innerText = `⏱️ Next: ${sec}s`;
+        } else {
+          badge.innerText = `💥 Eliminating...`;
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
+    }
+
+    function startSpinWheel() {
+      if (!socket || !currentRoomId || !currentUser) {
+        return alert('Please authenticate and join a room first');
+      }
+      document.getElementById('winnerBanner').style.display = 'none';
+      socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+        if (!ack.success) {
+          alert('Cannot start spin: ' + ack.error);
+        }
+      });
+    }
+
+    function handleSpinStarted(data) {
+      document.getElementById('winnerBanner').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-connected';
+      document.getElementById('spinStatusBadge').innerText = 'STATUS: RUNNING';
+      currentSpinPlayers = data.participants || [];
+      renderSpinPlayers(currentSpinPlayers);
+      startCountdown();
+    }
+
+    function handleUserEliminated(data) {
+      const eliminatedId = data.eliminated_user.user_id;
+      currentSpinPlayers = currentSpinPlayers.map(p => {
+        if (p.user_id === eliminatedId) {
+          return { ...p, is_eliminated: true, elimination_round: data.elimination_round };
+        }
+        return p;
+      });
+      renderSpinPlayers(currentSpinPlayers);
+      if (data.remaining_players && data.remaining_players.length > 1) {
+        startCountdown();
+      } else {
+        clearInterval(countdownInterval);
+        document.getElementById('spinCountdownBadge').style.display = 'none';
+      }
+    }
+
+    function handleWinnerAnnounced(data) {
+      clearInterval(countdownInterval);
+      document.getElementById('spinCountdownBadge').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-host';
+      document.getElementById('spinStatusBadge').innerText = 'STATUS: COMPLETED';
+
+      const banner = document.getElementById('winnerBanner');
+      const text = document.getElementById('winnerText');
+      banner.style.display = 'block';
+      text.innerHTML = `<strong>${data.winner.display_name || data.winner.username}</strong> won <strong>+${data.winner.prize_points}</strong> virtual points! Total: <strong>${data.winner.total_points} pts</strong> 🎉`;
+
+      currentSpinPlayers = currentSpinPlayers.map(p => {
+        if (p.user_id === data.winner.user_id) {
+          return { ...p, is_winner: true };
+        }
+        return p;
+      });
+      renderSpinPlayers(currentSpinPlayers);
+    }
+
+    function handleSpinAborted(data) {
+      clearInterval(countdownInterval);
+      document.getElementById('spinCountdownBadge').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-disconnected';
+      document.getElementById('spinStatusBadge').innerText = `STATUS: ABORTED (${data.reason})`;
+      alert(`Spin aborted: ${data.reason}`);
+    }
+
+    function renderSpinPlayers(players) {
+      const container = document.getElementById('spinPlayersGrid');
+      if (!players || players.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No active spin players.</div>';
+        return;
+      }
+
+      container.innerHTML = players.map((p, idx) => {
+        const isEliminated = p.is_eliminated;
+        const isWinner = p.is_winner;
+        let border = '1px solid var(--card-border)';
+        let bg = '#111422';
+        let statusBadge = `<span style="font-size: 0.7rem; color: #10b981;">● IN PLAY</span>`;
+
+        if (isWinner) {
+          border = '2px solid #fbbf24';
+          bg = 'rgba(251, 191, 36, 0.1)';
+          statusBadge = `<span style="font-size: 0.75rem; font-weight: 700; color: #fbbf24;">👑 WINNER</span>`;
+        } else if (isEliminated) {
+          border = '1px solid var(--danger)';
+          bg = 'rgba(239, 68, 68, 0.05)';
+          statusBadge = `<span style="font-size: 0.7rem; color: var(--danger); text-decoration: line-through;">ELIMINATED</span>`;
+        }
+
+        return `
+          <div style="background: ${bg}; border: ${border}; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Seat #${p.seat_order || idx + 1}</span>
+              ${statusBadge}
+            </div>
+            <strong style="font-size: 0.9rem; ${isEliminated ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+              ${p.display_name || p.username}
+            </strong>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function testEdgeCase(type) {
+      if (type === 'E1') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+          alert('E1 Result: ' + JSON.stringify(ack));
+        });
+      } else if (type === 'E2') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: '00000000-0000-0000-0000-000000000000' }, (ack) => {
+          alert('E2 Result: ' + JSON.stringify(ack));
+        });
+      } else if (type === 'E3') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack1) => {
+          logEvent('rapid_click_1', ack1);
+        });
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack2) => {
+          logEvent('rapid_click_2', ack2);
+          alert('E3/E9 Result: ' + JSON.stringify(ack2));
+        });
+      }
+    }
+
+    // Auto-fill on query param ?user=bob&room=<uuid>
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const userParam = params.get('user');
+      const roomParam = params.get('room');
+      if (userParam && quickUsers[userParam]) {
+        quickSelect(userParam);
+      }
+      if (roomParam) {
+        document.getElementById('roomIdInput').value = roomParam;
+      }
+    });
+  </script>
 </body>
 </html>

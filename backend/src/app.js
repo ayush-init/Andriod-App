@@ -23,9 +23,15 @@ app.use(express.urlencoded({ extended: true }));
 const uploadsDir = path.resolve(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsDir));
 
-// Static files for public browser test harness
+// Static files for public browser portal
 const publicDir = path.resolve(__dirname, '../public');
 app.use(express.static(publicDir));
+
+// Clean URLs for the web portal
+const webClientPath = path.resolve(publicDir, 'index.html');
+app.get(['/', '/arena', '/studio', '/app', '/portal'], (req, res) => {
+  res.sendFile(webClientPath);
+});
 
 // Routes
 app.use('/', healthRoutes);
