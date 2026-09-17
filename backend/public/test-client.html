@@ -628,13 +628,20 @@
     }
 
     function formatDraftHtml(d) {
+      let fileUrl = d.file_url || '';
+      if (fileUrl.includes('/uploads/')) {
+        fileUrl = fileUrl.substring(fileUrl.indexOf('/uploads/'));
+      }
+      const author = d.shared_by_username || d.username || (d.user && (d.user.display_name || d.user.username)) || 'Ayush (Host)';
       return `
-        <div class="draft-item">
+        <div class="draft-item" style="display: flex; justify-content: space-between; align-items: center; background: #111422; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;">
           <div>
-            <strong>${d.title}</strong>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">By: ${d.shared_by_username || d.username || 'User'} (${d.effect_applied || 'ECHO'})</div>
+            <strong style="color: #fff; font-size: 0.95rem;">${d.title}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+              By: <strong>${author}</strong> &bull; <span class="badge" style="background: rgba(236,72,153,0.15); color: var(--accent); padding: 1px 6px; font-size: 0.65rem;">${d.effect_applied || 'ECHO'}</span>
+            </div>
           </div>
-          <audio controls src="${d.file_url}" preload="none"></audio>
+          <audio controls src="${fileUrl}" preload="auto" style="height: 36px; max-width: 240px;"></audio>
         </div>
       `;
     }

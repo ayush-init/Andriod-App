@@ -142,10 +142,24 @@ export const getRoomDetails = async (req, res, next) => {
       [id]
     );
 
+    // Fetch shared drafts
+    const draftsRes = await db.query(
+      `SELECT rsd.id AS share_id, rsd.shared_at,
+              d.id AS draft_id, d.title, d.duration_ms, d.file_url, d.effect_applied,
+              u.id AS user_id, u.username, u.display_name, u.avatar_url
+       FROM room_shared_drafts rsd
+       JOIN drafts d ON rsd.draft_id = d.id
+       JOIN users u ON rsd.shared_by = u.id
+       WHERE rsd.room_id = $1
+       ORDER BY rsd.shared_at DESC LIMIT 20`,
+      [id]
+    );
+
     res.status(200).json({
       success: true,
       room,
       participants: membersRes.rows,
+      shared_drafts: draftsRes.rows,
       active_spin: spinRes.rows[0] || null,
     });
   } catch (err) {

@@ -125,6 +125,9 @@ class ApiClient {
                 if (json.has("participants") && !roomObj.has("members")) {
                     roomObj.add("members", json.get("participants"))
                 }
+                if (json.has("shared_drafts") && !roomObj.has("shared_drafts")) {
+                    roomObj.add("shared_drafts", json.get("shared_drafts"))
+                }
                 val room = gson.fromJson(roomObj, Room::class.java)
                 Result.success(room)
             }
