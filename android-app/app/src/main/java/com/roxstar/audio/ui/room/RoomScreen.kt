@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -93,18 +94,27 @@ fun RoomScreen(
                     }
                 }
 
-                if (room.hostId == currentUser?.id) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Accent.copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            text = "⭐ YOU ARE HOST",
-                            color = Accent,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.refreshCurrentRoom() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh Room",
+                            tint = TextMuted
                         )
+                    }
+                    if (room.hostId == currentUser?.id) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Accent.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = "⭐ YOU ARE HOST",
+                                color = Accent,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }

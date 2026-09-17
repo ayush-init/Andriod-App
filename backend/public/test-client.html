@@ -244,8 +244,18 @@
         <hr style="border: none; border-top: 1px solid var(--card-border);" />
 
         <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin: 0; font-weight: 600;">Select Active Room</label>
+            <button class="btn btn-secondary" style="padding: 3px 10px; font-size: 0.75rem;" onclick="fetchRooms()">🔄 Refresh Rooms</button>
+          </div>
+          <select id="roomSelect" onchange="onRoomSelected(this.value)" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: #fff; border-radius: 6px;">
+            <option value="">-- Choose an active room --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label>Room ID or Create New</label>
-          <input type="text" id="roomIdInput" placeholder="Enter Room UUID or click Create" />
+          <input type="text" id="roomIdInput" placeholder="Enter Room UUID or select from above" />
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -371,6 +381,35 @@
     function clearEventLog() {
       document.getElementById('eventLog').innerHTML = '';
     }
+
+    async function fetchRooms() {
+      try {
+        const res = await fetch('/api/rooms');
+        const data = await res.json();
+        const select = document.getElementById('roomSelect');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Choose an active room --</option>';
+        if (data.success && data.rooms) {
+          data.rooms.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = `${r.title || r.name} (by ${r.owner_username || 'Host'}) - ${r.online_participants_count || 1} online`;
+            select.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load rooms', e);
+      }
+    }
+
+    function onRoomSelected(roomId) {
+      if (roomId) {
+        document.getElementById('roomIdInput').value = roomId;
+      }
+    }
+
+    // Auto-fetch rooms on load
+    window.addEventListener('DOMContentLoaded', fetchRooms);
 
     // 1. Authenticate user via REST
     async function authenticateUser() {

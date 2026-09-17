@@ -137,6 +137,16 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refreshCurrentRoom() {
+        val room = _currentRoom.value ?: return
+        viewModelScope.launch {
+            val result = apiClient.getRoom(room.id)
+            result.onSuccess { updated ->
+                _currentRoom.value = updated
+            }
+        }
+    }
+
     fun leaveRoom() {
         val room = _currentRoom.value ?: return
         val user = _currentUser.value ?: return
@@ -245,24 +255,38 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
 
             is SocketEvent.UserJoined -> {
                 val room = _currentRoom.value ?: return
-                val existing = room.members.toMutableList()
-                existing.removeAll { it.userId == event.user.userId }
-                existing.add(event.user)
-                _currentRoom.value = room.copy(
-                    members = existing,
-                    participantCount = existing.count { it.isOnline }
-                )
+                if (!event.participants.isNullOrEmpty()) {
+                    _currentRoom.value = room.copy(
+                        members = event.participants,
+                        participantCount = event.participants.count { it.isOnline }
+                    )
+                } else {
+                    val existing = room.members.toMutableList()
+                    existing.removeAll { it.userId == event.user.userId }
+                    existing.add(event.user)
+                    _currentRoom.value = room.copy(
+                        members = existing,
+                        participantCount = existing.count { it.isOnline }
+                    )
+                }
             }
 
             is SocketEvent.UserLeft -> {
                 val room = _currentRoom.value ?: return
-                val updated = room.members.map {
-                    if (it.userId == event.userId) it.copy(isOnline = false) else it
+                if (!event.participants.isNullOrEmpty()) {
+                    _currentRoom.value = room.copy(
+                        members = event.participants,
+                        participantCount = event.participants.count { it.isOnline }
+                    )
+                } else {
+                    val updated = room.members.map {
+                        if (it.userId == event.userId) it.copy(isOnline = false) else it
+                    }
+                    _currentRoom.value = room.copy(
+                        members = updated,
+                        participantCount = updated.count { it.isOnline }
+                    )
                 }
-                _currentRoom.value = room.copy(
-                    members = updated,
-                    participantCount = updated.count { it.isOnline }
-                )
             }
 
             is SocketEvent.DraftShared -> {

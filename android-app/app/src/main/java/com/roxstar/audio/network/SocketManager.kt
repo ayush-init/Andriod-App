@@ -23,8 +23,8 @@ sealed class SocketEvent {
     data class Connected(val socketId: String) : SocketEvent()
     object Disconnected : SocketEvent()
     data class RoomStateReceived(val room: Room, val activeSpin: JSONObject?) : SocketEvent()
-    data class UserJoined(val user: RoomMember) : SocketEvent()
-    data class UserLeft(val userId: String, val username: String) : SocketEvent()
+    data class UserJoined(val user: RoomMember, val participants: List<RoomMember>? = null) : SocketEvent()
+    data class UserLeft(val userId: String, val username: String, val participants: List<RoomMember>? = null) : SocketEvent()
     data class DraftShared(val draft: SharedDraft) : SocketEvent()
     data class SpinStarted(val spinId: String, val participants: List<RoomMember>) : SocketEvent()
     data class UserEliminated(
@@ -91,9 +91,15 @@ class SocketManager {
                 try {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
-                        val roomJson = json.getJSONObject("room")
+                        val roomObj = json.optJSONObject("room") ?: json
+                        if (json.has("participants") && !roomObj.has("members")) {
+                            roomObj.put("members", json.getJSONArray("participants"))
+                        }
+                        if (json.has("shared_drafts") && !roomObj.has("shared_drafts")) {
+                            roomObj.put("shared_drafts", json.getJSONArray("shared_drafts"))
+                        }
+                        val room = gson.fromJson(roomObj.toString(), Room::class.java)
                         val activeSpinJson = json.optJSONObject("active_spin")
-                        val room = gson.fromJson(roomJson.toString(), Room::class.java)
                         scope.launch { _events.emit(SocketEvent.RoomStateReceived(room, activeSpinJson)) }
                     }
                 } catch (e: Exception) {
@@ -105,13 +111,31 @@ class SocketManager {
                 try {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
+                        val userObj = json.optJSONObject("user") ?: json
                         val member = RoomMember(
-                            userId = json.getString("user_id"),
-                            username = json.getString("username"),
-                            role = json.optString("role", "MEMBER"),
-                            isOnline = true
+                            userId = userObj.optString("user_id", userObj.optString("id")),
+                            username = userObj.optString("username", "Participant"),
+                            role = userObj.optString("role", "PARTICIPANT"),
+                            isOnline = true,
+                            avatarUrl = userObj.optString("avatar_url", null)
                         )
-                        scope.launch { _events.emit(SocketEvent.UserJoined(member)) }
+                        val partsList = mutableListOf<RoomMember>()
+                        val partsArr = json.optJSONArray("participants")
+                        if (partsArr != null) {
+                            for (i in 0 until partsArr.length()) {
+                                val pObj = partsArr.getJSONObject(i)
+                                partsList.add(
+                                    RoomMember(
+                                        userId = pObj.optString("user_id", pObj.optString("id")),
+                                        username = pObj.optString("username", "User"),
+                                        role = pObj.optString("role", "PARTICIPANT"),
+                                        isOnline = pObj.optBoolean("is_online", true),
+                                        avatarUrl = pObj.optString("avatar_url", null)
+                                    )
+                                )
+                            }
+                        }
+                        scope.launch { _events.emit(SocketEvent.UserJoined(member, if (partsList.isNotEmpty()) partsList else null)) }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error parsing user_joined", e)
@@ -122,9 +146,25 @@ class SocketManager {
                 try {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
-                        val uid = json.getString("user_id")
+                        val uid = json.optString("user_id", "")
                         val uname = json.optString("username", "")
-                        scope.launch { _events.emit(SocketEvent.UserLeft(uid, uname)) }
+                        val partsList = mutableListOf<RoomMember>()
+                        val partsArr = json.optJSONArray("participants")
+                        if (partsArr != null) {
+                            for (i in 0 until partsArr.length()) {
+                                val pObj = partsArr.getJSONObject(i)
+                                partsList.add(
+                                    RoomMember(
+                                        userId = pObj.optString("user_id", pObj.optString("id")),
+                                        username = pObj.optString("username", "User"),
+                                        role = pObj.optString("role", "PARTICIPANT"),
+                                        isOnline = pObj.optBoolean("is_online", false),
+                                        avatarUrl = pObj.optString("avatar_url", null)
+                                    )
+                                )
+                            }
+                        }
+                        scope.launch { _events.emit(SocketEvent.UserLeft(uid, uname, if (partsList.isNotEmpty()) partsList else null)) }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error parsing user_left", e)
@@ -135,7 +175,7 @@ class SocketManager {
                 try {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
-                        val draftJson = json.getJSONObject("draft")
+                        val draftJson = json.optJSONObject("draft") ?: json
                         val draft = gson.fromJson(draftJson.toString(), SharedDraft::class.java)
                         scope.launch { _events.emit(SocketEvent.DraftShared(draft)) }
                     }
