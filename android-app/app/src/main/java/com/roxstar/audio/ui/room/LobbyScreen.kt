@@ -296,7 +296,15 @@ fun LobbyScreen(
                         )
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        FilterChip(
+                            selected = serverUrlInput.contains("127.0.0.1") || serverUrlInput.contains("localhost"),
+                            onClick = { serverUrlInput = "http://127.0.0.1:5000" },
+                            label = { Text("🔌 USB Cable") }
+                        )
                         FilterChip(
                             selected = serverUrlInput.contains("10.0.2.2"),
                             onClick = { serverUrlInput = "http://10.0.2.2:5000" },
@@ -305,7 +313,7 @@ fun LobbyScreen(
                         FilterChip(
                             selected = serverUrlInput.contains("10.108.172.139"),
                             onClick = { serverUrlInput = "http://10.108.172.139:5000" },
-                            label = { Text("Wi-Fi (PC)") }
+                            label = { Text("Wi-Fi") }
                         )
                     }
                 }
