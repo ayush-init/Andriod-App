@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -376,7 +377,12 @@ fun RoomAudioSection(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(room.sharedDrafts, key = { it.id }) { draft ->
+                itemsIndexed(
+                    items = room.sharedDrafts,
+                    key = { index, draft ->
+                        if (draft.id.isNotBlank()) "${draft.id}_$index" else "${draft.audioUrl}_$index"
+                    }
+                ) { _, draft ->
                     val isPlaying = playingDraftId == draft.id
                     SharedDraftCard(
                         draft = draft,

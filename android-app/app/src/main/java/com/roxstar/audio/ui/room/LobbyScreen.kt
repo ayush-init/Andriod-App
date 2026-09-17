@@ -262,7 +262,7 @@ fun LobbyScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(activeRooms, key = { it.id }) { room ->
+                items(activeRooms, key = { it.id.ifEmpty { "${it.name}_${it.hostId}" } }) { room ->
                     RoomItemCard(
                         room = room,
                         canJoin = currentUser != null,

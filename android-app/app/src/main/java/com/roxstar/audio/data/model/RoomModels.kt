@@ -29,15 +29,15 @@ data class RoomMember(
 )
 
 data class SharedDraft(
-    val id: String = "",
+    @SerializedName(value = "id", alternate = ["share_id", "draft_id"]) val id: String = "",
     @SerializedName("room_id") val roomId: String? = null,
-    @SerializedName("user_id") val userId: String = "",
+    @SerializedName(value = "user_id", alternate = ["shared_by"]) val userId: String = "",
     val username: String? = null,
     val title: String = "",
     @SerializedName(value = "audio_url", alternate = ["file_url"]) val audioUrl: String = "",
     @SerializedName("duration_ms") val durationMs: Long = 0L,
     @SerializedName("effect_applied") val effectApplied: String = "ECHO",
-    @SerializedName("created_at") val createdAt: String? = null
+    @SerializedName(value = "created_at", alternate = ["shared_at"]) val createdAt: String? = null
 ) {
     val formattedDuration: String
         get() {
