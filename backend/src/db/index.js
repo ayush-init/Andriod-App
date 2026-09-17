@@ -1,15 +1,20 @@
 import pg from 'pg';
 import dns from 'dns/promises';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config(); // fallback to cwd
 
 const { Pool } = pg;
 
 let pool = null;
 
 export async function getPool() {
-  if (pool) return pool;
+  if (pool && !pool.ended) return pool;
 
   const rawUrl = process.env.DATABASE_URL;
   if (!rawUrl) {
