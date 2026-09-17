@@ -88,14 +88,39 @@ jobs:
     steps:
       - name: Deploy to AWS EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
-        continue-on-error: true
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+          script_stop: true
           script: |
-            cd ~/Andriod-App || cd Andriod-App
-            git pull origin main
-            docker compose up --build -d
-            echo "🚀 Deployment successfully completed on AWS EC2!"
+            echo "Connected to EC2 as $(whoami) on $(hostname)"
+            if [ -d "$HOME/Andriod-App" ]; then
+              cd "$HOME/Andriod-App"
+            elif [ -d "$HOME/Android-App" ]; then
+              cd "$HOME/Android-App"
+            elif [ -d "/home/ubuntu/Andriod-App" ]; then
+              cd "/home/ubuntu/Andriod-App"
+            else
+              echo "Repository folder not found! Listing home:"
+              ls -la ~
+              exit 1
+            fi
+
+            echo "Pulling latest changes from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Rebuilding and starting Docker containers..."
+            if docker compose version >/dev/null 2>&1; then
+              docker compose up --build -d
+            elif sudo docker compose version >/dev/null 2>&1; then
+              sudo docker compose up --build -d
+            else
+              sudo docker-compose up --build -d
+            fi
+
+            echo "Current running containers:"
+            docker ps || sudo docker ps
+            echo "Deployment completed successfully on AWS EC2!"
