@@ -314,7 +314,7 @@ fun PlayerSeatCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = player.username.take(2).uppercase(),
+                    text = player.username.take(2).uppercase().ifEmpty { "P" },
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp

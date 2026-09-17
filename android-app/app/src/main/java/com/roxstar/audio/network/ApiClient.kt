@@ -80,8 +80,11 @@ class ApiClient {
     suspend fun createRoom(name: String, hostUserId: String): Result<Room> = withContext(Dispatchers.IO) {
         try {
             val body = JsonObject().apply {
+                addProperty("title", name)
                 addProperty("name", name)
+                addProperty("owner_id", hostUserId)
                 addProperty("host_user_id", hostUserId)
+                addProperty("max_participants", 20)
             }.toString()
 
             val request = Request.Builder()
@@ -95,7 +98,8 @@ class ApiClient {
                     return@withContext Result.failure(IOException("Server error: ${response.code} $resString"))
                 }
                 val json = gson.fromJson(resString, JsonObject::class.java)
-                val room = gson.fromJson(json.getAsJsonObject("room"), Room::class.java)
+                val roomObj = json.getAsJsonObject("room")
+                val room = gson.fromJson(roomObj, Room::class.java)
                 Result.success(room)
             }
         } catch (e: Exception) {
@@ -117,7 +121,11 @@ class ApiClient {
                     return@withContext Result.failure(IOException("Server error: ${response.code}"))
                 }
                 val json = gson.fromJson(resString, JsonObject::class.java)
-                val room = gson.fromJson(json.getAsJsonObject("room"), Room::class.java)
+                val roomObj = json.getAsJsonObject("room")
+                if (json.has("participants") && !roomObj.has("members")) {
+                    roomObj.add("members", json.get("participants"))
+                }
+                val room = gson.fromJson(roomObj, Room::class.java)
                 Result.success(room)
             }
         } catch (e: Exception) {

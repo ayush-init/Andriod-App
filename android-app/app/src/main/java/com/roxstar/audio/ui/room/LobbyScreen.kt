@@ -115,53 +115,56 @@ fun LobbyScreen(
                         }
                     }
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(Primary),
-                                contentAlignment = Alignment.Center
+                    val user = currentUser
+                    if (user != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(Primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = user.username.take(2).uppercase().ifEmpty { "U" },
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = user.username,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        fontSize = 16.sp
+                                    )
+                                    Text(
+                                        text = "🪙 ${user.virtualPoints} points",
+                                        color = Warning,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Success.copy(alpha = 0.2f)
                             ) {
                                 Text(
-                                    text = currentUser!!.username.take(2).uppercase(),
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = currentUser!!.username,
+                                    text = "ONLINE",
+                                    color = Success,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextPrimary,
-                                    fontSize = 16.sp
-                                )
-                                Text(
-                                    text = "🪙 ${currentUser!!.virtualPoints} points",
-                                    color = Warning,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Success.copy(alpha = 0.2f)
-                        ) {
-                            Text(
-                                text = "ONLINE",
-                                color = Success,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
                         }
                     }
                 }
