@@ -186,20 +186,21 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### 🎙️ Phase 5: Android Audio Studio using Oboe & Native C++ DSP (Section A - 40 pts)
-- [ ] Scaffold native Android project with C++ NDK support in `/android-app`
-- [ ] Integrate Google Oboe library for low-latency audio capture & playback
-- [ ] Native C++ Audio Pipeline (`/android-app/app/src/main/cpp/` and `/native-audio/`):
-  - Microphone input stream lifecycle (Start, Stop, Cancel)
-  - Real-time Echo DSP Effect: Circular delay buffer with adjustable feedback and decay
-  - Native PCM buffer processing and WAV encoder with standard 44.1kHz / 16-bit PCM RIFF header
-- [ ] Android UI & Lifecycle Layer:
-  - Runtime `RECORD_AUDIO` permission handling with graceful failure states
-  - Recording Studio Screen: Start, Stop, Cancel buttons, recording timer, Effect toggle (Clean vs Echo)
-  - Drafts Management Screen (Section A2):
+- [x] Scaffold native Android project with C++ NDK support in `/android-app`
+- [x] Integrate Google Oboe library for low-latency audio capture & playback (via Prefab & CMake)
+- [x] Native C++ Audio Pipeline (`/android-app/app/src/main/cpp/`):
+  - Microphone input stream lifecycle (`AudioEngine.cpp`: Start, Stop, Cancel)
+  - Real-time Echo DSP Effect (`EchoEffect.cpp`): Circular delay buffer with adjustable feedback and decay
+  - Native PCM buffer processing and WAV encoder (`WavEncoder.cpp`) with standard 44.1kHz / 16-bit PCM RIFF header
+  - JNI Native Bridge (`native-lib.cpp` and `NativeAudioBridge.kt`)
+- [x] Android UI & Lifecycle Layer:
+  - Runtime `RECORD_AUDIO` permission handling with graceful failure states (`MainActivity.kt`)
+  - Recording Studio Screen (`StudioScreen.kt`): Start, Stop, Cancel buttons, live timer, dynamic RMS VU meter, Clean vs Echo toggle
+  - Drafts Management Screen (`DraftsScreen.kt`, Section A2):
     - Save recording as local Draft with title and timestamp
-    - List drafts with name, creation time, and formatted duration
-    - Play and Delete draft functionality
-- [ ] Commit and push Phase 5 to GitHub
+    - List drafts with name, creation time, formatted duration, and effect badge
+    - Local audio playback with Play/Pause button and Delete draft functionality (`DraftRepository.kt`)
+- [x] Commit and push Phase 5 to GitHub
 - 🔍 **Manual Verification Checklist**:
   1. Launch Android app, grant microphone permission.
   2. Record a 5-second voice sample with Echo effect enabled.
