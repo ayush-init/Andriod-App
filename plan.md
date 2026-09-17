@@ -83,7 +83,7 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### 🗄️ Phase 1: Database Engineering & PostgreSQL Migrations (Section D2 - 15 pts)
-- [ ] Design PostgreSQL schema with strict constraints, foreign keys, and indexes:
+- [x] Design PostgreSQL schema with strict constraints, foreign keys, and indexes:
   - `users`: ID (UUID), username, display_name, avatar_url, created_at
   - `rooms`: ID (UUID), title, owner_id, status (ACTIVE/CLOSED), max_participants, created_at, closed_at
   - `room_members`: ID (UUID), room_id, user_id, role (HOST/PARTICIPANT), is_online, joined_at, left_at (Unique constraint on `(room_id, user_id)`)
@@ -91,14 +91,14 @@ README.md                 # Setup, manual verification guide & submission docume
   - `spins`: ID (UUID), room_id, initiated_by, status (WAITING/RUNNING/COMPLETED/ABORTED), winner_id, prize_points, created_at, completed_at
   - `spin_participants`: ID (UUID), spin_id, user_id, seat_order, is_eliminated, elimination_round, eliminated_at
   - `spin_events`: ID (UUID), spin_id, event_type, payload_json, sequence_no, created_at
-- [ ] Add partial unique index: `idx_one_active_spin_per_room ON spins (room_id) WHERE status IN ('WAITING', 'RUNNING')`
-- [ ] Create migration scripts in `/database/migrations/`
-- [ ] Implement database client pool supporting remote PostgreSQL (Neon/Supabase/Render/AWS RDS/Local)
-- [ ] Create a DB migration & health runner script (`npm run db:migrate`)
-- [ ] Commit and push Phase 1 to GitHub
+- [x] Add partial unique index: `idx_one_active_spin_per_room ON spins (room_id) WHERE status IN ('WAITING', 'RUNNING')`
+- [x] Create migration scripts in `/database/migrations/`
+- [x] Implement database client pool supporting remote PostgreSQL (Neon/Supabase/Render/AWS RDS/Local)
+- [x] Create a DB migration & health runner script (`npm run db:migrate`)
+- [x] Commit and push Phase 1 to GitHub
 - 🔍 **Manual Verification Checklist**:
-  1. Run migration with your PostgreSQL database URL.
-  2. Verify all 7 tables, indexes, and relations are created in PostgreSQL.
+  1. Run migration with your PostgreSQL database URL (`npm run db:migrate`).
+  2. Verify all 7 tables, indexes, and relations are created in PostgreSQL (`npm run db:test`).
 
 ---
 
@@ -266,6 +266,8 @@ README.md                 # Setup, manual verification guide & submission docume
 
 ## Current Status & Next Immediate Step
 
-- **Current Active Phase**: **Phase 1: Database Engineering & PostgreSQL Migrations**
-- **Status**: READY TO EXECUTE (Waiting for user PostgreSQL Database URL or approval to proceed with default schema setup)
-- **Completed**: Phase 0 (Repository scaffolding, git configuration, remote push to GitHub)
+- **Current Active Phase**: **Phase 2: Backend REST APIs & Audio Upload Hosting**
+- **Status**: READY TO EXECUTE
+- **Completed**: 
+  - Phase 0: Repository scaffolding, git configuration, remote push to GitHub
+  - Phase 1: Database Engineering & PostgreSQL Migrations (7 tables, partial unique index, migration scripts, connection pool tested with Neon DB)
