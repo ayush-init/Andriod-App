@@ -3,11 +3,15 @@ import dotenv from 'dotenv';
 import app from './app.js';
 import db from './db/index.js';
 import logger from './utils/logger.js';
+import { initSocketIO } from './sockets/index.js';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
+
+// Initialize Socket.IO engine
+const io = initSocketIO(server);
 
 // Startup Recovery Routine (Server restart crash-safety)
 async function onServerStartup() {

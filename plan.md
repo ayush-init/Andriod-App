@@ -129,18 +129,19 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### 🌐 Phase 3: Real-Time WebSocket Engine & Room Presence (Section B2 - 20 pts)
-- [ ] Integrate Socket.IO server into Node.js backend
-- [ ] Implement presence tracking & connection lifecycle:
+- [x] Integrate Socket.IO server into Node.js backend
+- [x] Implement presence tracking & connection lifecycle:
   - `user_joined`: Broadcast updated participant list when a user joins
   - `user_left`: Broadcast departure and clean presence on leave/disconnect
   - `draft_shared`: Real-time notification with audio streaming URL when a draft is shared
   - `room_state`: Deliver full snapshot upon initial connect or reconnection
-- [ ] Build interactive Browser-based Socket Test Client (`/backend/public/test-client.html`):
+- [x] Build interactive Browser-based Socket Test Client (`/backend/public/test-client.html`):
   - Connect as User A, B, or C
   - View live participant list
   - Listen to shared audio drafts directly in browser
   - Ready for multi-client spin wheel simulation
-- [ ] Commit and push Phase 3 to GitHub
+- [x] Write integration test or test suite for WebSocket events (`tests/integration/websocket_presence.test.js`) - 6/6 tests passing
+- [x] Commit and push Phase 3 to GitHub
 - 🔍 **Manual Verification Checklist**:
   1. Open `/test-client.html` in two separate browser tabs (Client A and Client B).
   2. When Client B joins Room 1, Client A instantly sees `user_joined` event and updated list.
@@ -266,9 +267,10 @@ README.md                 # Setup, manual verification guide & submission docume
 
 ## Current Status & Next Immediate Step
 
-- **Current Active Phase**: **Phase 3: Real-Time WebSocket Engine & Room Presence**
+- **Current Active Phase**: **Phase 4: Spin Wheel State Machine & 9 Edge Cases**
 - **Status**: READY TO EXECUTE
 - **Completed**: 
   - Phase 0: Repository scaffolding, git configuration, remote push to GitHub
   - Phase 1: Database Engineering & PostgreSQL Migrations (7 tables, partial unique index, migration scripts, connection pool tested with Neon DB)
   - Phase 2: Backend REST APIs & Audio Upload Hosting (Express server, Multer upload, Room lifecycle APIs, Zod validation, 13/13 passing tests)
+  - Phase 3: Real-Time WebSocket Engine & Room Presence (Socket.IO pub/sub, presence sync, jukebox, browser test harness, 19/19 passing tests)
