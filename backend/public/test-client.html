@@ -290,6 +290,46 @@
       </div>
     </div>
 
+    <!-- 🎡 Real-Time Spin Wheel Arena Card -->
+    <div class="card" style="border: 2px solid var(--primary);">
+      <div class="card-title">
+        <span>🎡 Real-Time Elimination Spin Wheel (Section C)</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span id="spinStatusBadge" class="badge badge-host">STATUS: WAITING</span>
+          <span id="spinCountdownBadge" class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); display: none;">⏱️ 5s</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <button id="startSpinBtn" class="btn btn-accent" style="padding: 10px 24px; font-size: 1rem;" onclick="startSpinWheel()">
+          🚀 1. Start Spin Wheel (Host Only)
+        </button>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Requires $\ge 3$ online participants. 5-second server-authoritative elimination rounds.</span>
+      </div>
+
+      <!-- Edge Cases Quick-Test Bar -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--card-border); border-radius: 8px; padding: 10px 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Quick Edge Case Tests:</span>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E1')">E1: Less than 3 players</button>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E2')">E2: Non-host triggers</button>
+        <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;" onclick="testEdgeCase('E3')">E3/E9: Rapid double-click</button>
+      </div>
+
+      <!-- Winner Fanfare Banner -->
+      <div id="winnerBanner" style="display: none; background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(99,102,241,0.2)); border: 2px solid var(--accent); border-radius: 8px; padding: 16px; text-align: center;">
+        <h2 style="color: #fbbf24; font-size: 1.5rem;">👑 WINNER DECLARED! 👑</h2>
+        <div id="winnerText" style="font-size: 1.1rem; margin-top: 6px;"></div>
+      </div>
+
+      <!-- Active Spin Players Grid -->
+      <div>
+        <label>Spin Seats & Real-Time Elimination Status</label>
+        <div id="spinPlayersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 8px;">
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Start a spin to populate player seats.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Live Event Stream Log -->
     <div class="card">
       <div class="card-title">
@@ -437,9 +477,26 @@
           addDraftItem(draft);
         });
 
-        socket.on('spin_started', (data) => logEvent('spin_started', data));
-        socket.on('user_eliminated', (data) => logEvent('user_eliminated', data));
-        socket.on('winner_announced', (data) => logEvent('winner_announced', data));
+        socket.on('spin_started', (data) => {
+          logEvent('spin_started', data);
+          handleSpinStarted(data);
+        });
+        socket.on('user_eliminated', (data) => {
+          logEvent('user_eliminated', data);
+          handleUserEliminated(data);
+        });
+        socket.on('winner_announced', (data) => {
+          logEvent('winner_announced', data);
+          handleWinnerAnnounced(data);
+        });
+        socket.on('spin_aborted', (data) => {
+          logEvent('spin_aborted', data);
+          handleSpinAborted(data);
+        });
+        socket.on('spin_error', (data) => {
+          logEvent('spin_error', data);
+          alert('Spin Error: ' + data.error);
+        });
       }
 
       socket.emit('join_room', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
@@ -541,6 +598,150 @@
           <audio controls src="${d.file_url}" preload="none"></audio>
         </div>
       `;
+    }
+
+    let currentSpinPlayers = [];
+    let countdownInterval = null;
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      let sec = 5;
+      const badge = document.getElementById('spinCountdownBadge');
+      badge.style.display = 'inline-flex';
+      badge.innerText = `⏱️ Next: ${sec}s`;
+      countdownInterval = setInterval(() => {
+        sec -= 1;
+        if (sec > 0) {
+          badge.innerText = `⏱️ Next: ${sec}s`;
+        } else {
+          badge.innerText = `💥 Eliminating...`;
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
+    }
+
+    function startSpinWheel() {
+      if (!socket || !currentRoomId || !currentUser) {
+        return alert('Please authenticate and join a room first');
+      }
+      document.getElementById('winnerBanner').style.display = 'none';
+      socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+        if (!ack.success) {
+          alert('Cannot start spin: ' + ack.error);
+        }
+      });
+    }
+
+    function handleSpinStarted(data) {
+      document.getElementById('winnerBanner').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-connected';
+      document.getElementById('spinStatusBadge').innerText = 'STATUS: RUNNING';
+      currentSpinPlayers = data.participants || [];
+      renderSpinPlayers(currentSpinPlayers);
+      startCountdown();
+    }
+
+    function handleUserEliminated(data) {
+      const eliminatedId = data.eliminated_user.user_id;
+      currentSpinPlayers = currentSpinPlayers.map(p => {
+        if (p.user_id === eliminatedId) {
+          return { ...p, is_eliminated: true, elimination_round: data.elimination_round };
+        }
+        return p;
+      });
+      renderSpinPlayers(currentSpinPlayers);
+      if (data.remaining_players && data.remaining_players.length > 1) {
+        startCountdown();
+      } else {
+        clearInterval(countdownInterval);
+        document.getElementById('spinCountdownBadge').style.display = 'none';
+      }
+    }
+
+    function handleWinnerAnnounced(data) {
+      clearInterval(countdownInterval);
+      document.getElementById('spinCountdownBadge').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-host';
+      document.getElementById('spinStatusBadge').innerText = 'STATUS: COMPLETED';
+
+      const banner = document.getElementById('winnerBanner');
+      const text = document.getElementById('winnerText');
+      banner.style.display = 'block';
+      text.innerHTML = `<strong>${data.winner.display_name || data.winner.username}</strong> won <strong>+${data.winner.prize_points}</strong> virtual points! Total: <strong>${data.winner.total_points} pts</strong> 🎉`;
+
+      currentSpinPlayers = currentSpinPlayers.map(p => {
+        if (p.user_id === data.winner.user_id) {
+          return { ...p, is_winner: true };
+        }
+        return p;
+      });
+      renderSpinPlayers(currentSpinPlayers);
+    }
+
+    function handleSpinAborted(data) {
+      clearInterval(countdownInterval);
+      document.getElementById('spinCountdownBadge').style.display = 'none';
+      document.getElementById('spinStatusBadge').className = 'badge badge-disconnected';
+      document.getElementById('spinStatusBadge').innerText = `STATUS: ABORTED (${data.reason})`;
+      alert(`Spin aborted: ${data.reason}`);
+    }
+
+    function renderSpinPlayers(players) {
+      const container = document.getElementById('spinPlayersGrid');
+      if (!players || players.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No active spin players.</div>';
+        return;
+      }
+
+      container.innerHTML = players.map((p, idx) => {
+        const isEliminated = p.is_eliminated;
+        const isWinner = p.is_winner;
+        let border = '1px solid var(--card-border)';
+        let bg = '#111422';
+        let statusBadge = `<span style="font-size: 0.7rem; color: #10b981;">● IN PLAY</span>`;
+
+        if (isWinner) {
+          border = '2px solid #fbbf24';
+          bg = 'rgba(251, 191, 36, 0.1)';
+          statusBadge = `<span style="font-size: 0.75rem; font-weight: 700; color: #fbbf24;">👑 WINNER</span>`;
+        } else if (isEliminated) {
+          border = '1px solid var(--danger)';
+          bg = 'rgba(239, 68, 68, 0.05)';
+          statusBadge = `<span style="font-size: 0.7rem; color: var(--danger); text-decoration: line-through;">ELIMINATED</span>`;
+        }
+
+        return `
+          <div style="background: ${bg}; border: ${border}; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Seat #${p.seat_order || idx + 1}</span>
+              ${statusBadge}
+            </div>
+            <strong style="font-size: 0.9rem; ${isEliminated ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+              ${p.display_name || p.username}
+            </strong>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function testEdgeCase(type) {
+      if (type === 'E1') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack) => {
+          alert('E1 Result: ' + JSON.stringify(ack));
+        });
+      } else if (type === 'E2') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: '00000000-0000-0000-0000-000000000000' }, (ack) => {
+          alert('E2 Result: ' + JSON.stringify(ack));
+        });
+      } else if (type === 'E3') {
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack1) => {
+          logEvent('rapid_click_1', ack1);
+        });
+        socket.emit('start_spin', { room_id: currentRoomId, user_id: currentUser.id }, (ack2) => {
+          logEvent('rapid_click_2', ack2);
+          alert('E3/E9 Result: ' + JSON.stringify(ack2));
+        });
+      }
     }
 
     // Auto-fill on query param ?user=bob&room=<uuid>

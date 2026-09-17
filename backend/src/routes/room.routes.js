@@ -7,6 +7,7 @@ import {
   leaveRoom,
   shareDraftToRoom,
   getRoomSharedDrafts,
+  startRoomSpin,
   createRoomSchema,
   joinLeaveRoomSchema,
   shareDraftSchema,
@@ -22,5 +23,6 @@ router.post('/rooms/:id/join', validate(joinLeaveRoomSchema), joinRoom);
 router.post('/rooms/:id/leave', validate(joinLeaveRoomSchema), leaveRoom);
 router.post('/rooms/:id/drafts', validate(shareDraftSchema), shareDraftToRoom);
 router.get('/rooms/:id/drafts', getRoomSharedDrafts);
+router.post('/rooms/:id/spins', startRoomSpin);
 
 export default router;

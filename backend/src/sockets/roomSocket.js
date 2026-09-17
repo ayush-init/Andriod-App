@@ -1,5 +1,6 @@
 import db from '../db/index.js';
 import logger from '../utils/logger.js';
+import SpinStateMachine from '../services/spinStateMachine.js';
 
 /**
  * Helper to fetch complete room state snapshot from PostgreSQL
@@ -204,7 +205,8 @@ export function registerRoomHandlers(io, socket) {
       );
 
       socket.leave(`room:${targetRoomId}`);
-      delete socket.data.roomId;
+      // Edge Case 4 & 6: Update active spin state machine if a spin is running
+      await SpinStateMachine.handleParticipantLeave(targetRoomId, targetUserId, io);
 
       const roomState = await getAuthoritativeRoomState(targetRoomId);
 
@@ -238,6 +240,9 @@ export function registerRoomHandlers(io, socket) {
           [roomId, userId]
         );
 
+        // Edge Case 4 & 6: Update active spin state machine if running
+        await SpinStateMachine.handleParticipantLeave(roomId, userId, io);
+
         const roomState = await getAuthoritativeRoomState(roomId);
 
         // Broadcast user_left with disconnect reason
@@ -250,6 +255,31 @@ export function registerRoomHandlers(io, socket) {
       }
     } catch (err) {
       logger.error('Error in socket disconnect cleanup:', err);
+    }
+  });
+
+  /**
+   * 6. START SPIN WHEEL (Section C)
+   */
+  socket.on('start_spin', async ({ room_id, user_id, interval_ms }, callback) => {
+    try {
+      const targetRoomId = room_id || socket.data.roomId;
+      const targetUserId = user_id || socket.data.userId;
+
+      if (!targetRoomId || !targetUserId) {
+        if (callback) callback({ success: false, error: 'room_id and user_id are required' });
+        return;
+      }
+
+      const result = await SpinStateMachine.startSpin(targetRoomId, targetUserId, io, {
+        intervalMs: interval_ms || 5000,
+      });
+
+      if (callback) callback({ success: true, spin: result.spin });
+    } catch (err) {
+      logger.error('Error in start_spin socket handler:', err.message);
+      if (callback) callback({ success: false, error: err.message, code: err.code });
+      else socket.emit('spin_error', { error: err.message, code: err.code });
     }
   });
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import db from '../db/index.js';
+import SpinStateMachine from '../services/spinStateMachine.js';
+import { getIO } from '../sockets/index.js';
 
 export const createRoomSchema = z.object({
   body: z.object({
@@ -305,3 +307,23 @@ export const getRoomSharedDrafts = async (req, res, next) => {
     next(err);
   }
 };
+
+export const startRoomSpin = async (req, res, next) => {
+  try {
+    const { id: room_id } = req.params;
+    const { user_id, interval_ms } = req.body;
+
+    const io = getIO();
+    const result = await SpinStateMachine.startSpin(room_id, user_id, io, {
+      intervalMs: interval_ms || 5000,
+    });
+
+    res.status(201).json(result);
+  } catch (err) {
+    if (err.status) {
+      return res.status(err.status).json({ success: false, error: err.message, code: err.code });
+    }
+    next(err);
+  }
+};
+

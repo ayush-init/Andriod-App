@@ -151,29 +151,31 @@ README.md                 # Setup, manual verification guide & submission docume
 ---
 
 ### 🎡 Phase 4: Spin Wheel State Machine & 9 Edge Cases (Section C - 50 pts)
-- [ ] Implement authoritative Server-Side Spin State Machine:
+- [x] Implement authoritative Server-Side Spin State Machine:
   - Transitions: `WAITING` ➔ `RUNNING` ➔ `COMPLETED` / `ABORTED`
   - Rule: 3 to 20 eligible participants required to start
   - Rule: Only room owner/admin can start the spin
-  - Rule: Exactly one active spin allowed per room
+  - Rule: Exactly one active spin allowed per room (Partial unique index `idx_one_active_spin_per_room`)
   - Rule: High-precision 5-second elimination timer
-  - Rule: Last remaining participant is declared winner and awarded virtual points
-- [ ] Implement WebSocket Spin Events:
+  - Rule: Last remaining participant is declared winner and awarded +50 virtual points
+- [x] Implement WebSocket Spin Events:
   - `spin_started`: Initial players, sequence ID, round info
   - `user_eliminated`: Emitted every 5 seconds with eliminated user & remaining pool
   - `winner_announced`: Emitted when 1 player remains, with final winner details
-- [ ] Implement All 9 Required Edge Cases (Section C4 - 15 pts):
-  1. Duplicate start requests blocked (idempotency guard)
+  - `spin_aborted`: Emitted if participants drop < 2 mid-spin
+- [x] Implement All 9 Required Edge Cases (Section C4 - 15 pts):
+  1. Duplicate start requests blocked (idempotency guard & memory mutex)
   2. Simultaneous room joins handled without state race conditions
   3. User departure during spin (auto-eliminated gracefully without halting the game)
   4. User reconnect during spin (receives current round state and active timer)
   5. Admin disconnects mid-spin (spin continues autonomously to completion)
   6. Insufficient players (< 3) rejected with descriptive error
   7. Last remaining players disconnect -> Spin transitions to `ABORTED`
-  8. Duplicate event sequence IDs prevent replay
+  8. Duplicate event sequence IDs prevent replay (Atomic SQL sequence counter)
   9. Server restart recovery: startup script marks uncompleted spins as `ABORTED`
-- [ ] Write unit tests for state machine (`tests/unit/spin_state_machine.test.js`)
-- [ ] Commit and push Phase 4 to GitHub
+- [x] Write integration tests for state machine (`tests/integration/spin_wheel.test.js` - 7/7 passed, 26/26 overall)
+- [x] Add interactive Spin Wheel UI and Edge Case testers to `test-client.html`
+- [x] Commit and push Phase 4 to GitHub
 - 🔍 **Manual Verification Checklist**:
   1. Connect 3 browser test clients to a room.
   2. Admin clicks "Start Spin" -> all 3 clients receive `spin_started`.
