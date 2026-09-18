@@ -364,7 +364,7 @@ export const deleteRoom = async (req, res, next) => {
     try {
       const io = getIO();
       if (io) {
-        io.to(room_id).emit('room_deleted', {
+        io.to(`room:${room_id}`).emit('room_deleted', {
           room_id,
           message: `Room "${room.title}" was removed by the host.`,
         });
@@ -384,4 +384,3 @@ export const deleteRoom = async (req, res, next) => {
     next(err);
   }
 };
-

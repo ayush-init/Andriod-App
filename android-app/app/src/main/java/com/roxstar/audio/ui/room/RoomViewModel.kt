@@ -280,6 +280,12 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
+            is SocketEvent.RoomDeleted -> {
+                _currentRoom.value = null
+                _spinState.value = SpinState()
+                _statusMessage.value = event.message
+            }
+
             is SocketEvent.UserJoined -> {
                 val room = _currentRoom.value ?: return
                 if (!event.participants.isNullOrEmpty()) {
@@ -300,6 +306,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
 
             is SocketEvent.UserLeft -> {
                 val room = _currentRoom.value ?: return
+                _statusMessage.value = "${event.username.ifBlank { "A participant" }} left the room"
                 if (!event.participants.isNullOrEmpty()) {
                     _currentRoom.value = room.copy(
                         members = event.participants,
@@ -357,6 +364,14 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                 val current = _spinState.value
                 _spinState.value = current.copy(
                     status = "COMPLETED",
+                    activePlayers = listOf(
+                        RoomMember(
+                            userId = event.winner.userId,
+                            username = event.winner.username,
+                            isOnline = true
+                        )
+                    ),
+                    eliminatedPlayers = emptyList(),
                     winner = event.winner,
                     countdownSeconds = 0
                 )

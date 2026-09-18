@@ -222,6 +222,12 @@ export function registerRoomHandlers(io, socket) {
 
       logger.info(`Socket User [${targetUserId}] left Room [${targetRoomId}]`);
 
+      const leavingUserRes = await db.query(
+        'SELECT id, username, display_name FROM users WHERE id = $1',
+        [targetUserId]
+      );
+      const leavingUser = leavingUserRes.rows[0] || { id: targetUserId };
+
       // Update DB presence
       await db.query(
         `UPDATE room_members
@@ -239,6 +245,9 @@ export function registerRoomHandlers(io, socket) {
       // Broadcast user_left event to remaining members
       socket.to(`room:${targetRoomId}`).emit('user_left', {
         user_id: targetUserId,
+        username: leavingUser.username,
+        display_name: leavingUser.display_name,
+        reason: 'LEFT_ROOM',
         participants: roomState ? roomState.participants : [],
         timestamp: new Date().toISOString(),
       });
@@ -254,34 +263,11 @@ export function registerRoomHandlers(io, socket) {
    * 5. DISCONNECT & CLEANUP
    */
   socket.on('disconnect', async (reason) => {
-    try {
-      const { roomId, userId } = socket.data;
-      if (roomId && userId) {
-        logger.info(`Socket [${socket.id}] disconnected (${reason}). Updating presence for user [${userId}] in room [${roomId}]`);
-
-        await db.query(
-          `UPDATE room_members
-           SET is_online = false, left_at = NOW()
-           WHERE room_id = $1 AND user_id = $2`,
-          [roomId, userId]
-        );
-
-        // Edge Case 4 & 6: Update active spin state machine if running
-        await SpinStateMachine.handleParticipantLeave(roomId, userId, io);
-
-        const roomState = await getAuthoritativeRoomState(roomId);
-
-        // Broadcast user_left with disconnect reason
-        socket.to(`room:${roomId}`).emit('user_left', {
-          user_id: userId,
-          reason,
-          participants: roomState ? roomState.participants : [],
-          timestamp: new Date().toISOString(),
-        });
-      }
-    } catch (err) {
-      logger.error('Error in socket disconnect cleanup:', err);
-    }
+    // A browser reload/network interruption is not a voluntary room leave.
+    // Keep membership online so the user remains in the room and is restored
+    // by the next join_room emitted after the socket reconnects. Only the
+    // explicit leave_room event changes room membership and spin eligibility.
+    logger.info(`Socket [${socket.id}] disconnected (${reason}); preserving room membership.`);
   });
 
   /**

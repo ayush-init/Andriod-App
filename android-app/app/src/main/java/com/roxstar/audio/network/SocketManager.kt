@@ -23,6 +23,7 @@ sealed class SocketEvent {
     data class Connected(val socketId: String) : SocketEvent()
     object Disconnected : SocketEvent()
     data class RoomStateReceived(val room: Room, val activeSpin: JSONObject?) : SocketEvent()
+    data class RoomDeleted(val roomId: String, val message: String) : SocketEvent()
     data class UserJoined(val user: RoomMember, val participants: List<RoomMember>? = null) : SocketEvent()
     data class UserLeft(val userId: String, val username: String, val participants: List<RoomMember>? = null) : SocketEvent()
     data class DraftShared(val draft: SharedDraft) : SocketEvent()
@@ -181,6 +182,24 @@ class SocketManager {
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error parsing draft_shared", e)
+                }
+            }
+
+            s.on("room_deleted") { args ->
+                try {
+                    if (args.isNotEmpty() && args[0] is JSONObject) {
+                        val json = args[0] as JSONObject
+                        scope.launch {
+                            _events.emit(
+                                SocketEvent.RoomDeleted(
+                                    roomId = json.optString("room_id", ""),
+                                    message = json.optString("message", "The host removed this room.")
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing room_deleted", e)
                 }
             }
 

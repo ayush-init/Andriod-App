@@ -1153,6 +1153,25 @@
       return null;
     }
 
+    function persistActiveRoom(roomId) {
+      try { localStorage.setItem('roxstar_active_room', roomId); } catch (e) {}
+    }
+
+    function clearPersistedRoom() {
+      try { localStorage.removeItem('roxstar_active_room'); } catch (e) {}
+    }
+
+    function joinCurrentRoom() {
+      if (!socket || !currentRoom || !currentUser || !currentUser.id) return;
+      socket.emit('join_room', { room_id: currentRoom.id, user_id: currentUser.id }, (ack) => {
+        if (ack && !ack.success) {
+          showToast('Could not restore room: ' + (ack.error || 'Unknown error'));
+          return;
+        }
+        switchView('arena');
+      });
+    }
+
     // View Switching
     function switchView(viewName) {
       document.getElementById('viewLobby').style.display = viewName === 'lobby' ? 'flex' : 'none';
@@ -1283,9 +1302,7 @@
         pill.className = 'status-pill online';
         document.getElementById('connectionStatusText').innerText = 'Connected';
 
-        if (currentRoom && currentUser && currentUser.id) {
-          socket.emit('join_room', { room_id: currentRoom.id, user_id: currentUser.id });
-        }
+        joinCurrentRoom();
       });
 
       socket.on('disconnect', () => {
@@ -1304,10 +1321,12 @@
 
       socket.on('user_left', (data) => {
         renderParticipants(data.participants || []);
+        showToast(`${data.display_name || data.username || 'A participant'} left the room.`);
       });
 
       socket.on('room_deleted', (data) => {
-        alert(data.message || 'This room was removed by the host.');
+        clearPersistedRoom();
+        showToast(data.message || 'The host removed this room.');
         if (currentRoom && currentRoom.id === data.room_id) {
           currentRoom = null;
           window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);
@@ -1558,23 +1577,16 @@
         return;
       }
       currentRoom = { id: roomId };
+      persistActiveRoom(roomId);
       initSocket();
-
-      socket.emit('join_room', { room_id: roomId, user_id: currentUser.id }, (ack) => {
-        if (ack && !ack.success) {
-          alert('Could not join room: ' + (ack.error || 'Unknown error'));
-        } else {
-          switchView('arena');
-          const newUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
-          window.history.replaceState({ roomId }, '', newUrl);
-        }
-      });
+      if (socket.connected) joinCurrentRoom();
     }
 
     function handleLeaveRoom() {
       if (socket && currentRoom && currentUser) {
         socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
       }
+      clearPersistedRoom();
       currentRoom = null;
       window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);
       switchView('lobby');
@@ -1825,7 +1837,7 @@
           return { ...p, is_winner: true };
         }
         return p;
-      });
+      }).filter(p => p.user_id === data.winner.user_id);
       renderSpinRoster(currentSpinPlayers);
       refreshIcons();
     }
@@ -2078,6 +2090,16 @@
     // Auto initialize on DOM ready
     window.addEventListener('DOMContentLoaded', async () => {
       loadSavedUser();
+      const savedRoomId = localStorage.getItem('roxstar_active_room');
+      if (savedRoomId) {
+        if (currentUser && currentUser.id) {
+          currentRoom = { id: savedRoomId };
+          initSocket();
+          if (socket.connected) joinCurrentRoom();
+        } else {
+          pendingJoinRoomId = savedRoomId;
+        }
+      }
       await fetchActiveRooms();
       drawWheel([]);
       refreshIcons();
