@@ -117,8 +117,23 @@ bool AudioEngine::cancelRecording() {
 }
 
 void AudioEngine::setEchoEnabled(bool enabled) {
-    mEchoEffect.setEnabled(enabled);
+    mEchoEffect.setMode(enabled ? EchoEffect::Mode::ECHO : EchoEffect::Mode::CLEAN);
     LOGI("Echo DSP effect %s", enabled ? "ENABLED" : "DISABLED");
+}
+
+void AudioEngine::setEffectMode(int mode) {
+    if (mode <= 0) {
+        mEchoEffect.setMode(EchoEffect::Mode::CLEAN);
+    } else if (mode == 2) {
+        mEchoEffect.setMode(EchoEffect::Mode::REVERB);
+    } else {
+        mEchoEffect.setMode(EchoEffect::Mode::ECHO);
+    }
+    LOGI("Audio DSP mode set to %d", mode);
+}
+
+int AudioEngine::getEffectMode() const {
+    return static_cast<int>(mEchoEffect.getMode());
 }
 
 bool AudioEngine::isEchoEnabled() const {

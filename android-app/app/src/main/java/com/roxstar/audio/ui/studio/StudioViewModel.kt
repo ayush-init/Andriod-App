@@ -23,6 +23,12 @@ sealed class StudioRecordingState {
     data class Stopped(val outputFile: File, val durationMs: Long, val effectApplied: String) : StudioRecordingState()
 }
 
+enum class AudioEffectMode(val label: String, val nativeMode: Int) {
+    CLEAN("Clean", 0),
+    ECHO("Echo", 1),
+    REVERB("Reverb", 2)
+}
+
 class StudioViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "StudioViewModel"
     private val repository = DraftRepository(application.applicationContext)
@@ -32,11 +38,14 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
     private val _recordingState = MutableStateFlow<StudioRecordingState>(StudioRecordingState.Idle)
     val recordingState: StateFlow<StudioRecordingState> = _recordingState.asStateFlow()
 
-    private val _isEchoEnabled = MutableStateFlow(true)
-    val isEchoEnabled: StateFlow<Boolean> = _isEchoEnabled.asStateFlow()
+    private val _effectMode = MutableStateFlow(AudioEffectMode.ECHO)
+    val effectMode: StateFlow<AudioEffectMode> = _effectMode.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _statusMessage = MutableStateFlow<String?>(null)
+    val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
     // Playback state
     private var mediaPlayer: MediaPlayer? = null
@@ -47,15 +56,14 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
     private var recordingTickerJob: Job? = null
 
     init {
-        // Initialize native echo state
-        NativeAudioBridge.setEchoEnabled(true)
+        NativeAudioBridge.setEffectMode(AudioEffectMode.ECHO.nativeMode)
     }
 
-    fun toggleEcho() {
-        val newState = !_isEchoEnabled.value
-        _isEchoEnabled.value = newState
-        NativeAudioBridge.setEchoEnabled(newState)
-        Log.i(TAG, "Toggled Echo: $newState")
+    fun setEffectMode(mode: AudioEffectMode) {
+        _effectMode.value = mode
+        NativeAudioBridge.setEffectMode(mode.nativeMode)
+        _statusMessage.value = "${mode.label} DSP enabled for the next recording"
+        Log.i(TAG, "Set audio effect: ${mode.label}")
     }
 
     fun startRecording(): Boolean {
@@ -75,6 +83,7 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
             return false
         }
 
+        _statusMessage.value = "Recording started with ${_effectMode.value.label} DSP"
         _recordingState.value = StudioRecordingState.Recording(0L, 0.0f)
 
         // Launch duration & level ticker
@@ -100,8 +109,9 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
 
         val file = currentOutputFile
         if (success && file != null && file.exists() && file.length() > 44) {
-            val effect = if (_isEchoEnabled.value) "ECHO" else "CLEAN"
+            val effect = _effectMode.value.label.uppercase()
             _recordingState.value = StudioRecordingState.Stopped(file, durationMs, effect)
+            _statusMessage.value = "Recording complete — ready to save your ${effect.lowercase()} take"
         } else {
             _recordingState.value = StudioRecordingState.Idle
             if (file != null && file.exists()) {
@@ -131,6 +141,7 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
                 )
                 repository.saveDraft(draft)
                 _recordingState.value = StudioRecordingState.Idle
+                _statusMessage.value = "Draft \"$draftTitle\" saved locally"
             }
         }
     }
@@ -142,6 +153,7 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
                 state.outputFile.delete()
             }
             _recordingState.value = StudioRecordingState.Idle
+            _statusMessage.value = "Recording discarded"
         }
     }
 
@@ -191,12 +203,17 @@ class StudioViewModel(application: Application) : AndroidViewModel(application) 
             stopPlayback()
         }
         viewModelScope.launch {
-            repository.deleteDraft(draftId)
+            val deleted = repository.deleteDraft(draftId)
+            _statusMessage.value = if (deleted) "Draft deleted" else "Draft could not be deleted"
         }
     }
 
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun clearStatusMessage() {
+        _statusMessage.value = null
     }
 
     override fun onCleared() {

@@ -33,8 +33,9 @@ fun StudioScreen(
     modifier: Modifier = Modifier
 ) {
     val recordingState by viewModel.recordingState.collectAsState()
-    val isEchoEnabled by viewModel.isEchoEnabled.collectAsState()
+    val effectMode by viewModel.effectMode.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val statusMessage by viewModel.statusMessage.collectAsState()
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var draftTitleInput by remember { mutableStateOf("") }
@@ -61,12 +62,13 @@ fun StudioScreen(
             modifier = Modifier.padding(top = 16.dp)
         ) {
             Text(
-                text = "🎙️ ROXSTAR Audio Studio",
+                text = "ROXSTAR",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Text("LIVE AUDIO STUDIO", color = TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -77,7 +79,7 @@ fun StudioScreen(
                     modifier = Modifier.padding(4.dp)
                 ) {
                     Text(
-                        text = "Native C++ Oboe (44.1kHz / 16-bit)",
+                        text = "● CONNECTED  •  OBOE 44.1kHz / 16-bit",
                         color = Success,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -177,7 +179,7 @@ fun StudioScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // 3. DSP Effect Mode Toggle (Clean vs Echo)
+            // 3. DSP Effect Mode Toggle
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = CardBackground,
@@ -187,25 +189,18 @@ fun StudioScreen(
                     modifier = Modifier.padding(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    FilterChip(
-                        selected = !isEchoEnabled,
-                        onClick = { if (isEchoEnabled) viewModel.toggleEcho() },
-                        label = { Text("Clean Voice") },
+                    AudioEffectMode.entries.forEach { mode ->
+                        FilterChip(
+                        selected = effectMode == mode,
+                        onClick = { viewModel.setEffectMode(mode) },
+                        label = { Text(mode.label) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Primary,
+                            selectedContainerColor = if (mode == AudioEffectMode.REVERB) Accent else Primary,
                             selectedLabelColor = Color.White
                         )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilterChip(
-                        selected = isEchoEnabled,
-                        onClick = { if (!isEchoEnabled) viewModel.toggleEcho() },
-                        label = { Text("✨ Echo DSP (Native)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Accent,
-                            selectedLabelColor = Color.White
                         )
-                    )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
                 }
             }
         }
@@ -354,7 +349,14 @@ fun StudioScreen(
         )
     }
 
-    // Error Snackbar
+    // Demo-friendly status notifications
+    statusMessage?.let { msg ->
+        Snackbar(
+            action = { TextButton(onClick = { viewModel.clearStatusMessage() }) { Text("OK", color = Accent) } },
+            modifier = Modifier.padding(16.dp)
+        ) { Text(msg) }
+    }
+
     errorMessage?.let { err ->
         Snackbar(
             action = {

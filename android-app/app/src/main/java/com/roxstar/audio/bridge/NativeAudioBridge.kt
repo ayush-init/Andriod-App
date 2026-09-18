@@ -27,6 +27,8 @@ object NativeAudioBridge {
     external fun cancelRecording(): Boolean
     external fun setEchoEnabled(enabled: Boolean)
     external fun isEchoEnabled(): Boolean
+    external fun setEffectMode(mode: Int)
+    external fun getEffectMode(): Int
     external fun isRecording(): Boolean
     external fun getCurrentLevel(): Float
     external fun getRecordingDurationMs(): Long

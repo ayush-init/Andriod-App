@@ -63,6 +63,21 @@ Java_com_roxstar_audio_bridge_NativeAudioBridge_isEchoEnabled(
     return roxstar::AudioEngine::getInstance().isEchoEnabled() ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT void JNICALL
+Java_com_roxstar_audio_bridge_NativeAudioBridge_setEffectMode(
+        JNIEnv* /*env*/,
+        jobject /*thiz*/,
+        jint mode) {
+    roxstar::AudioEngine::getInstance().setEffectMode(static_cast<int>(mode));
+}
+
+JNIEXPORT jint JNICALL
+Java_com_roxstar_audio_bridge_NativeAudioBridge_getEffectMode(
+        JNIEnv* /*env*/,
+        jobject /*thiz*/) {
+    return roxstar::AudioEngine::getInstance().getEffectMode();
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_roxstar_audio_bridge_NativeAudioBridge_isRecording(
         JNIEnv* /*env*/,

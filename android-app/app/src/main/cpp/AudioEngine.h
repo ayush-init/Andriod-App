@@ -39,6 +39,8 @@ public:
      */
     void setEchoEnabled(bool enabled);
     bool isEchoEnabled() const;
+    void setEffectMode(int mode);
+    int getEffectMode() const;
 
     void setEchoFeedback(float feedback);
     void setEchoDelayMs(int32_t delayMs);

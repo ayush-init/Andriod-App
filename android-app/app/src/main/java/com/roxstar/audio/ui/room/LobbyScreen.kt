@@ -349,25 +349,37 @@ fun LobbyScreen(
                         )
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        FilterChip(
-                            selected = serverUrlInput.contains("127.0.0.1") || serverUrlInput.contains("localhost"),
-                            onClick = { serverUrlInput = "http://127.0.0.1:5000" },
-                            label = { Text("🔌 USB Cable") }
-                        )
-                        FilterChip(
-                            selected = serverUrlInput.contains("10.0.2.2"),
-                            onClick = { serverUrlInput = "http://10.0.2.2:5000" },
-                            label = { Text("Emulator") }
-                        )
-                        FilterChip(
-                            selected = serverUrlInput.contains("10.108.172.139"),
-                            onClick = { serverUrlInput = "http://10.108.172.139:5000" },
-                            label = { Text("Wi-Fi") }
-                        )
+                    Text(
+                        "USB is selected by default for local testing. Choose Cloud to use the deployed Roxstar backend.",
+                        color = TextMuted,
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(
+                                selected = serverUrlInput.contains("api.roxstar.audio"),
+                                onClick = { serverUrlInput = "https://api.roxstar.audio" },
+                                label = { Text("☁ Cloud") }
+                            )
+                            FilterChip(
+                                selected = serverUrlInput.contains("127.0.0.1") || serverUrlInput.contains("localhost"),
+                                onClick = { serverUrlInput = "http://127.0.0.1:5000" },
+                                label = { Text("🔌 USB Cable") }
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(
+                                selected = serverUrlInput.contains("10.0.2.2"),
+                                onClick = { serverUrlInput = "http://10.0.2.2:5000" },
+                                label = { Text("Emulator") }
+                            )
+                            FilterChip(
+                                selected = serverUrlInput.contains("10.108.172.139"),
+                                onClick = { serverUrlInput = "http://10.108.172.139:5000" },
+                                label = { Text("Wi-Fi") }
+                            )
+                        }
                     }
                 }
             },

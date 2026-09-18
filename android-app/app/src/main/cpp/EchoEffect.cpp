@@ -13,7 +13,8 @@ EchoEffect::EchoEffect(int32_t sampleRate, int32_t maxDelayMs)
 }
 
 void EchoEffect::process(int16_t* buffer, int32_t numFrames) {
-    if (!mEnabled.load(std::memory_order_relaxed)) {
+    const Mode mode = static_cast<Mode>(mMode.load(std::memory_order_relaxed));
+    if (!mEnabled.load(std::memory_order_relaxed) || mode == Mode::CLEAN) {
         return; // Bypass DSP cleanly if disabled (Clean mode)
     }
 
@@ -28,14 +29,23 @@ void EchoEffect::process(int16_t* buffer, int32_t numFrames) {
 
         // Calculate tap index in circular buffer
         int32_t readIndex = mWriteIndex - delaySamples;
-        if (readIndex < 0) {
-            readIndex += bufferSize;
-        }
-
+        if (readIndex < 0) readIndex += bufferSize;
         float delayedSample = mDelayBuffer[readIndex];
 
-        // Echo formula: output = dry * (1 - decay) + wet * decay
-        float outputSample = (inputSample * (1.0f - decay)) + (delayedSample * decay);
+        float outputSample;
+        if (mode == Mode::REVERB) {
+            // A compact multi-tap room response: early reflection plus a
+            // longer tail from the same lock-free delay line.
+            int32_t earlyIndex = mWriteIndex - std::max(1, delaySamples / 3);
+            if (earlyIndex < 0) earlyIndex += bufferSize;
+            const float earlyReflection = mDelayBuffer[earlyIndex];
+            outputSample = (inputSample * 0.62f) +
+                           (earlyReflection * (decay * 0.22f)) +
+                           (delayedSample * (decay * 0.16f));
+        } else {
+            // Echo formula: dry/wet blend.
+            outputSample = (inputSample * (1.0f - decay)) + (delayedSample * decay);
+        }
 
         // Circular feedback: delay[n] = input + feedback * delay[n - D]
         mDelayBuffer[mWriteIndex] = inputSample + (delayedSample * feedback);
@@ -53,6 +63,15 @@ void EchoEffect::process(int16_t* buffer, int32_t numFrames) {
 
 void EchoEffect::setEnabled(bool enabled) {
     mEnabled.store(enabled, std::memory_order_relaxed);
+}
+
+void EchoEffect::setMode(Mode mode) {
+    mMode.store(static_cast<int>(mode), std::memory_order_relaxed);
+    mEnabled.store(mode != Mode::CLEAN, std::memory_order_relaxed);
+}
+
+EchoEffect::Mode EchoEffect::getMode() const {
+    return static_cast<Mode>(mMode.load(std::memory_order_relaxed));
 }
 
 bool EchoEffect::isEnabled() const {

@@ -26,8 +26,9 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     private val localDraftRepo = DraftRepository(application.applicationContext)
 
     val localDraftsFlow = localDraftRepo.draftsFlow
+    val isConnected: StateFlow<Boolean> = socketManager.isConnected
 
-    private val _serverUrl = MutableStateFlow("http://10.0.2.2:5000") // 10.0.2.2 for emulator, 10.108.172.139 for real device
+    private val _serverUrl = MutableStateFlow("http://127.0.0.1:5000")
     val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -158,6 +159,25 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         refreshActiveRooms()
     }
 
+    fun removeRoom() {
+        val room = _currentRoom.value ?: return
+        val user = _currentUser.value ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = apiClient.deleteRoom(room.id, user.id)
+            _isLoading.value = false
+            result.onSuccess {
+                _statusMessage.value = "Room removed by host"
+                _currentRoom.value = null
+                _spinState.value = SpinState()
+                socketManager.disconnect()
+                refreshActiveRooms()
+            }.onFailure { err ->
+                _statusMessage.value = "Could not remove room: ${err.message}"
+            }
+        }
+    }
+
     fun shareLocalVoiceDraft(localDraft: VoiceDraft) {
         val room = _currentRoom.value ?: return
         val user = _currentUser.value ?: return
@@ -190,6 +210,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     fun startSpinWheel() {
         val room = _currentRoom.value ?: return
         val user = _currentUser.value ?: return
+        _statusMessage.value = "Starting synchronized spin for everyone..."
         socketManager.startSpin(room.id, user.id)
     }
 
@@ -287,6 +308,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             is SocketEvent.UserJoined -> {
+                _statusMessage.value = "${event.user.username} joined the room"
                 val room = _currentRoom.value ?: return
                 if (!event.participants.isNullOrEmpty()) {
                     _currentRoom.value = room.copy(
@@ -324,6 +346,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             is SocketEvent.DraftShared -> {
+                _statusMessage.value = "${event.draft.username ?: "A participant"} shared \"${event.draft.title}\""
                 val room = _currentRoom.value ?: return
                 val drafts = room.sharedDrafts.toMutableList()
                 drafts.removeAll { it.id == event.draft.id }
@@ -390,10 +413,19 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                     abortReason = event.reason,
                     countdownSeconds = 0
                 )
+                _statusMessage.value = "Spin stopped: ${event.reason}"
             }
 
             is SocketEvent.SpinError -> {
                 _statusMessage.value = "Spin Error: ${event.message}"
+            }
+
+            is SocketEvent.Connected -> {
+                _statusMessage.value = "Connected to Roxstar live services"
+            }
+
+            is SocketEvent.Disconnected -> {
+                _statusMessage.value = "Connection interrupted — retrying..."
             }
 
             else -> {}

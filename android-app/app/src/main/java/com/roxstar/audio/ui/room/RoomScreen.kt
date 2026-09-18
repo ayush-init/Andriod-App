@@ -45,6 +45,7 @@ fun RoomScreen(
 
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Room & Audio, 1: Spin Wheel
     var showShareDraftDialog by remember { mutableStateOf(false) }
+    var showRemoveRoomDialog by remember { mutableStateOf(false) }
 
     // If a spin is actively running, auto-switch to Spin tab
     LaunchedEffect(spinState.status) {
@@ -133,6 +134,9 @@ fun RoomScreen(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
+                        TextButton(onClick = { showRemoveRoomDialog = true }) {
+                            Text("Remove room", color = Danger, fontSize = 11.sp)
+                        }
                     }
                 }
             }
@@ -191,7 +195,7 @@ fun RoomScreen(
             text = {
                 if (localDrafts.isEmpty()) {
                     Text(
-                        text = "You have no saved voice takes yet! Go to the Studio tab to record one with the Echo DSP.",
+                        text = "You have no saved voice takes yet. Use Studio to record with Clean, Echo, or Reverb DSP.",
                         color = TextMuted
                     )
                 } else {
@@ -247,6 +251,24 @@ fun RoomScreen(
                 TextButton(onClick = { showShareDraftDialog = false }) {
                     Text("Close", color = TextMuted)
                 }
+            }
+        )
+    }
+
+    if (showRemoveRoomDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveRoomDialog = false },
+            containerColor = CardBackground,
+            title = { Text("Remove this room?", color = TextPrimary, fontWeight = FontWeight.Bold) },
+            text = { Text("Everyone will be disconnected and see that the host removed the room.", color = TextMuted) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemoveRoomDialog = false
+                    viewModel.removeRoom()
+                }) { Text("Remove room", color = Danger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveRoomDialog = false }) { Text("Cancel", color = TextMuted) }
             }
         )
     }
@@ -319,14 +341,6 @@ fun RoomAudioSection(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
-                        if (member.userId == room.hostId) {
-                            Text(
-                                text = " (Host)",
-                                color = Accent,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
             }

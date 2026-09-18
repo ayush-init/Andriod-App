@@ -21,7 +21,7 @@ class ApiClient {
     private val TAG = "ApiClient"
     private val gson = Gson()
 
-    var baseUrl: String = "http://10.0.2.2:5000" // Default Android Emulator host
+    var baseUrl: String = "http://127.0.0.1:5000" // USB/adb reverse default
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -133,6 +133,26 @@ class ApiClient {
             }
         } catch (e: Exception) {
             Log.e(TAG, "getRoom failed", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteRoom(roomId: String, userId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val body = JsonObject().apply { addProperty("user_id", userId) }.toString()
+            val request = Request.Builder()
+                .url("$baseUrl/api/rooms/$roomId")
+                .delete(body.toRequestBody(jsonMediaType))
+                .build()
+            client.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(IOException("Server error: ${response.code} $responseBody"))
+                }
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "deleteRoom failed", e)
             Result.failure(e)
         }
     }

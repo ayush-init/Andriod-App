@@ -10,6 +10,7 @@ namespace roxstar {
 
 class EchoEffect {
 public:
+    enum class Mode : int { CLEAN = 0, ECHO = 1, REVERB = 2 };
     EchoEffect(int32_t sampleRate = 44100, int32_t maxDelayMs = 1000);
     ~EchoEffect() = default;
 
@@ -20,6 +21,8 @@ public:
 
     void setEnabled(bool enabled);
     bool isEnabled() const;
+    void setMode(Mode mode);
+    Mode getMode() const;
 
     void setDelayMs(int32_t delayMs);
     int32_t getDelayMs() const;
@@ -39,6 +42,7 @@ private:
     int32_t mWriteIndex;
 
     std::atomic<bool> mEnabled{true};
+    std::atomic<int> mMode{static_cast<int>(Mode::ECHO)};
     std::atomic<int32_t> mDelaySamples;
     std::atomic<float> mFeedback{0.45f};  // Recirculation feedback
     std::atomic<float> mDecay{0.50f};     // Wet/dry blend
