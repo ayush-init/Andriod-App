@@ -206,9 +206,10 @@ describe('ROXSTAR Phase 4 Elimination Spin Wheel State Machine & Edge Cases', ()
       });
     });
 
-    // Both players disconnect mid-spin
-    player1Socket.disconnect();
-    player2Socket.disconnect();
+    // Both players explicitly leave mid-spin. A transient socket disconnect
+    // is intentionally treated as a reload/reconnect, not a room leave.
+    player1Socket.emit('leave_room', { room_id: testRoomId, user_id: player1.id });
+    player2Socket.emit('leave_room', { room_id: testRoomId, user_id: player2.id });
 
     await abortPromise;
 

@@ -155,17 +155,20 @@ describe('ROXSTAR Phase 3 WebSocket Presence & Room Sync Tests', () => {
     });
   });
 
-  it('5. Disconnect & Presence Cleanup: Disconnecting user triggers user_left with presence sync', (done) => {
+  it('5. Explicit Leave & Presence Cleanup: leaving user triggers user_left with presence sync', (done) => {
     hostSocket.once('user_left', (event) => {
       expect(event.user_id).toBe(participantUser.id);
       expect(event.participants.some((p) => p.user_id === participantUser.id)).toBe(false);
       done();
     });
 
-    participantSocket.disconnect();
+    participantSocket.emit('leave_room', {
+      room_id: testRoomId,
+      user_id: participantUser.id,
+    });
   });
 
-  it('6. Reconnect & State Synchronization: Rejoining returns latest authoritative snapshot', (done) => {
+  it('6. Reconnect & State Synchronization: rejoining returns latest authoritative snapshot', (done) => {
     const reconnectSocket = Client(socketUrl);
     reconnectSocket.on('connect', () => {
       reconnectSocket.emit('get_room_state', { room_id: testRoomId }, (ack) => {
@@ -174,6 +177,23 @@ describe('ROXSTAR Phase 3 WebSocket Presence & Room Sync Tests', () => {
         expect(Array.isArray(ack.roomState.participants)).toBe(true);
         reconnectSocket.disconnect();
         done();
+      });
+    });
+  });
+
+  it('7. Transient Disconnect: disconnecting does not remove room membership', (done) => {
+    const reloadSocket = Client(socketUrl);
+    reloadSocket.on('connect', () => {
+      reloadSocket.emit('join_room', { room_id: testRoomId, user_id: participantUser.id }, () => {
+        reloadSocket.disconnect();
+        setTimeout(async () => {
+          const member = await db.query(
+            'SELECT is_online FROM room_members WHERE room_id = $1 AND user_id = $2',
+            [testRoomId, participantUser.id]
+          );
+          expect(member.rows[0].is_online).toBe(true);
+          done();
+        }, 100);
       });
     });
   });
