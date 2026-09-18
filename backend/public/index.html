@@ -671,6 +671,50 @@
       height: 32px;
       opacity: 0.5;
     }
+
+    /* Room ID & Badge styles */
+    .room-id-chip {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.78rem;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+      user-select: all;
+      border: 1px solid rgba(0, 210, 180, 0.25);
+      display: inline-block;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-break: break-all;
+    }
+
+    /* Toast Notification */
+    #toastNotification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #00d2b4;
+      color: #0a0d14;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 12px 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 210, 180, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    #toastNotification.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -691,11 +735,11 @@
         <span id="connectionStatusText">Offline</span>
       </div>
 
-      <div class="user-profile-badge" onclick="openAuthModal()">
-        <img id="navAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Ayush" alt="User" />
+      <div class="user-profile-badge" onclick="openAuthModal('Change Name', 'Update your name or nickname:', true)">
+        <img id="navAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=guest" alt="User" />
         <div class="user-profile-info">
-          <span id="navUsername" class="user-profile-name">Ayush</span>
-          <span id="navPoints" class="user-profile-points">100 VP</span>
+          <span id="navUsername" class="user-profile-name">Set Name</span>
+          <span id="navPoints" class="user-profile-points">-- VP</span>
         </div>
         <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
       </div>
@@ -734,11 +778,11 @@
             <span class="role-badge host">Pro Arena</span>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-secondary);">
-            Spin up a synchronized live voice eliminator stage. Minimum 3 players required to start elimination rounds.
+            Spin up a synchronized live voice eliminator stage. You will be the host of this room.
           </p>
           <div class="form-group">
             <label>Room Name</label>
-            <input type="text" id="createRoomTitle" placeholder="e.g. Friday Voice Battle" value="Friday Voice Battle" />
+            <input type="text" id="createRoomTitle" placeholder="e.g. Rockstar Arena" />
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 0.8rem; color: var(--text-muted);">
@@ -751,7 +795,7 @@
           </div>
         </div>
 
-        <!-- Quick Join by Code -->
+        <!-- Quick Join by Code / Link -->
         <div class="card">
           <div class="card-header">
             <span class="card-title">
@@ -760,20 +804,35 @@
             </span>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-secondary);">
-            Enter an existing Room UUID or choose from active public rooms below.
+            Enter an existing Room UUID.
           </p>
           <div class="form-group">
             <label>Room ID</label>
-            <input type="text" id="quickRoomId" placeholder="Paste Room ID here..." />
+            <input type="text" id="quickRoomId" placeholder="Paste Room ID..." oninput="handleQuickRoomIdInput()" />
           </div>
+
+          <!-- Room Preview Box (Fetched dynamically from Room ID) -->
+          <div id="quickRoomPreview" style="display: none; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <div style="font-size: 0.72rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Target Room</div>
+            <div id="previewRoomTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;">-</div>
+            <div style="display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--text-secondary); flex-wrap: wrap;">
+              <span>👑 Host: <strong id="previewRoomHost" style="color: var(--text-primary);">-</strong></span>
+              <span>&bull;</span>
+              <span>👥 <strong id="previewRoomPlayers" style="color: var(--text-primary);">0</strong> Players Online</span>
+            </div>
+            <div style="margin-top: 6px; font-size: 0.72rem; color: var(--text-muted);">
+              Room ID: <code id="previewRoomId" class="room-id-chip" style="font-size: 0.72rem; padding: 2px 6px;">-</code>
+            </div>
+          </div>
+
           <div style="display: flex; gap: 10px; margin-top: auto;">
             <button class="btn btn-secondary" onclick="fetchActiveRooms()" style="flex: 1;">
               <i data-lucide="refresh-cw"></i>
               Refresh
             </button>
-            <button class="btn" onclick="handleJoinById()" style="flex: 2;">
+            <button id="btnQuickEnterStage" class="btn" onclick="handleJoinById()" style="flex: 2;">
               <i data-lucide="log-in"></i>
-              Enter Stage
+              <span>Enter Stage</span>
             </button>
           </div>
         </div>
@@ -803,22 +862,30 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <h2 id="stageRoomTitle" style="font-size: 1.25rem; font-weight: 800;">No Room Selected</h2>
-              <span id="stageStatusBadge" class="status-pill">Waiting for Match</span>
+              <span id="stageYouAreHostBadge" class="role-badge host" style="display: none; background: #f59e0b; color: #000; font-weight: 800;">
+                ⭐ YOU ARE HOST
+              </span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 8px;">
-              <span>Room ID: <strong id="stageRoomIdText">None</strong></span>
-              <button class="btn btn-secondary btn-sm" onclick="copyRoomId()" title="Copy Room ID">
-                <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span>Room ID:</span>
+              <code id="stageRoomIdText" class="room-id-chip">None</code>
+              <button class="btn btn-secondary btn-sm" onclick="copyRoomId()" title="Copy Room ID" style="padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="copy" style="width: 13px; height: 13px;"></i>
+                <span id="copyIdBtnText" style="font-size: 0.75rem;">Copy ID</span>
               </button>
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-secondary btn-sm" onclick="openShareDraftModal()">
               <i data-lucide="upload"></i>
               Share Take
+            </button>
+            <button id="btnDeleteRoom" class="btn btn-danger btn-sm" onclick="handleDeleteCurrentRoom()" style="display: none;" title="Remove this room (Host Only)">
+              <i data-lucide="trash-2"></i>
+              Remove Room
             </button>
             <button class="btn btn-danger btn-sm" onclick="handleLeaveRoom()">
               <i data-lucide="log-out"></i>
@@ -835,7 +902,6 @@
             <i data-lucide="disc"></i>
             Spin Chamber Arena
           </span>
-          <span id="spinEligibilityBadge" class="role-badge participant">Waiting for Players (&lt; 3)</span>
         </div>
 
         <div class="spin-stage-container">
@@ -990,48 +1056,34 @@
 
   </main>
 
-  <!-- User Identity & Quick Switch Modal -->
+  <!-- User Identity Modal -->
   <div id="authModal" class="modal-backdrop" style="display: none;">
     <div class="modal-card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <h3 id="authModalTitle" style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="user"></i>
-          Select User Profile
+          <span>Enter Your Name</span>
         </h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeAuthModal()">
+        <button id="authModalCloseBtn" class="btn btn-secondary btn-sm" onclick="closeAuthModal()" style="display: none;">
           <i data-lucide="x"></i>
         </button>
       </div>
 
-      <p style="font-size: 0.82rem; color: var(--text-secondary);">
-        Choose a quick profile or type a custom username to simulate multi-client multiplayer.
+      <p id="authModalSubtitle" style="font-size: 0.82rem; color: var(--text-secondary);">
+        Please enter your name or nickname to enter the arena and join rooms.
       </p>
 
-      <!-- Quick Preset Users -->
-      <div class="quick-users">
-        <button class="user-chip-btn" onclick="selectQuickUser('Ayush')">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Ayush" alt="Ayush" />
-          <span>Ayush (Host)</span>
-        </button>
-        <button class="user-chip-btn" onclick="selectQuickUser('Yatharth')">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Yatharth" alt="Yatharth" />
-          <span>Yatharth</span>
-        </button>
-        <button class="user-chip-btn" onclick="selectQuickUser('Krishna')">
-          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Krishna" alt="Krishna" />
-          <span>Krishna</span>
-        </button>
-      </div>
+      <form onsubmit="event.preventDefault(); handleAuthSubmit();" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="form-group">
+          <label>Your Name / Nickname</label>
+          <input type="text" id="customUsernameInput" placeholder="e.g. Alex, Maya, John..." value="" maxlength="30" autocomplete="off" />
+        </div>
 
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="customUsernameInput" placeholder="Enter username..." value="Ayush" />
-      </div>
-
-      <button class="btn" onclick="handleAuthSubmit()">
-        <i data-lucide="check"></i>
-        Confirm & Connect
-      </button>
+        <button type="submit" class="btn" style="width: 100%;">
+          <i data-lucide="check"></i>
+          <span>Confirm & Enter</span>
+        </button>
+      </form>
     </div>
   </div>
 
@@ -1068,21 +1120,37 @@
   <script>
     // State
     let socket = null;
-    let currentUser = {
-      id: null,
-      username: 'Ayush',
-      display_name: 'Ayush',
-      virtual_points: 100
-    };
+    let currentUser = null;
     let currentRoom = null;
     let currentSpinPlayers = [];
     let countdownInterval = null;
+    let wheelAnimationFrame = null;
+    let wheelRotation = 0;
+    let currentPreviewRoom = null;
+    let _previewDebounce = null;
+    let pendingJoinRoomId = null;
 
     // Initialize Lucide Icons
     function refreshIcons() {
       if (window.lucide) {
         window.lucide.createIcons();
       }
+    }
+
+    // Load saved user identity from LocalStorage
+    function loadSavedUser() {
+      try {
+        const saved = localStorage.getItem('roxstar_user');
+        if (saved) {
+          currentUser = JSON.parse(saved);
+          updateUserNav();
+          initSocket();
+          return currentUser;
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved user', e);
+      }
+      return null;
     }
 
     // View Switching
@@ -1102,59 +1170,103 @@
     }
 
     // Modal Handlers
-    function openAuthModal() {
-      document.getElementById('authModal').style.display = 'flex';
+    function openAuthModal(title, subtitle, allowCancel = false) {
+      const modal = document.getElementById('authModal');
+      const titleEl = document.getElementById('authModalTitle');
+      const subEl = document.getElementById('authModalSubtitle');
+      const closeBtn = document.getElementById('authModalCloseBtn');
+      const input = document.getElementById('customUsernameInput');
+
+      if (title && titleEl) {
+        titleEl.innerHTML = `<i data-lucide="user"></i><span>${escapeHtml(title)}</span>`;
+      }
+      if (subtitle && subEl) {
+        subEl.innerText = subtitle;
+      }
+      if (closeBtn) {
+        closeBtn.style.display = (allowCancel && currentUser && currentUser.id) ? 'block' : 'none';
+      }
+
+      input.value = currentUser ? (currentUser.display_name || currentUser.username || '') : '';
+      modal.style.display = 'flex';
+      setTimeout(() => input.focus(), 60);
       refreshIcons();
     }
+
     function closeAuthModal() {
+      if (!currentUser || !currentUser.id) {
+        alert('Please enter your name or nickname to proceed.');
+        return;
+      }
       document.getElementById('authModal').style.display = 'none';
     }
+
     function openShareDraftModal() {
       if (!currentRoom) return alert('You must enter a room first.');
       document.getElementById('shareDraftModal').style.display = 'flex';
       refreshIcons();
     }
+
     function closeShareDraftModal() {
       document.getElementById('shareDraftModal').style.display = 'none';
     }
 
-    function selectQuickUser(name) {
-      document.getElementById('customUsernameInput').value = name;
-      handleAuthSubmit();
-    }
-
     // 1. Authenticate / Login User
     async function handleAuthSubmit() {
-      const username = document.getElementById('customUsernameInput').value.trim();
-      if (!username) return alert('Please enter a username');
+      const input = document.getElementById('customUsernameInput');
+      const username = input.value.trim();
+      if (!username) {
+        alert('Please enter your name or nickname to continue.');
+        input.focus();
+        return;
+      }
 
       try {
         const res = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: username.toLowerCase().replace(/\s+/g, '_'),
+            username: username.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
             display_name: username
           })
         });
         const data = await res.json();
         if (data.success && data.user) {
           currentUser = data.user;
+          try {
+            localStorage.setItem('roxstar_user', JSON.stringify(currentUser));
+          } catch (e) {}
+
           updateUserNav();
-          closeAuthModal();
+          document.getElementById('authModal').style.display = 'none';
+          showToast(`Welcome, ${currentUser.display_name}!`);
 
           // Connect Socket if not connected
           initSocket();
+
+          if (pendingJoinRoomId) {
+            const target = pendingJoinRoomId;
+            pendingJoinRoomId = null;
+            joinRoomById(target);
+          } else {
+            fetchActiveRooms();
+          }
         } else {
           alert('Error logging in: ' + (data.error || 'Unknown error'));
         }
       } catch (err) {
         console.error('Auth error', err);
-        alert('Authentication request failed');
+        alert('Authentication request failed. Please check your network connection.');
       }
     }
 
     function updateUserNav() {
+      if (!currentUser || !currentUser.username) {
+        document.getElementById('navUsername').innerText = 'Set Name';
+        document.getElementById('navPoints').innerText = '-- VP';
+        document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=guest';
+        return;
+      }
       document.getElementById('navUsername').innerText = currentUser.display_name || currentUser.username;
       document.getElementById('navPoints').innerText = `${currentUser.virtual_points || 100} VP`;
       document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.username)}`;
@@ -1194,6 +1306,16 @@
         renderParticipants(data.participants || []);
       });
 
+      socket.on('room_deleted', (data) => {
+        alert(data.message || 'This room was removed by the host.');
+        if (currentRoom && currentRoom.id === data.room_id) {
+          currentRoom = null;
+          window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);
+          switchView('lobby');
+        }
+        fetchActiveRooms();
+      });
+
       socket.on('draft_shared', (draft) => {
         appendDraft(draft);
       });
@@ -1219,6 +1341,110 @@
       });
     }
 
+    // Helpers: HTML escaping and clipboard feedback
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    function copyRoomId(roomId) {
+      const id = roomId || (currentRoom && currentRoom.id);
+      if (!id) return alert('No Room ID available');
+      copyToClipboard(id, 'Room ID');
+    }
+
+    function copyToClipboard(text, label) {
+      if (!navigator.clipboard) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast(`${label} copied to clipboard!`);
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`${label} copied to clipboard!`);
+      }).catch(() => {
+        prompt(`Copy ${label}:`, text);
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toast || !msgEl) return;
+      msgEl.innerText = message;
+      toast.classList.add('show');
+      if (window._toastTimeout) clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function handleQuickRoomIdInput() {
+      const val = document.getElementById('quickRoomId').value.trim();
+      const id = val;
+      if (_previewDebounce) clearTimeout(_previewDebounce);
+      _previewDebounce = setTimeout(() => {
+        fetchRoomPreview(id);
+      }, 300);
+    }
+
+    async function fetchRoomPreview(roomId) {
+      const previewBox = document.getElementById('quickRoomPreview');
+      const btnEnter = document.getElementById('btnQuickEnterStage');
+      if (!roomId) {
+        if (previewBox) previewBox.style.display = 'none';
+        if (btnEnter) btnEnter.innerHTML = '<i data-lucide="log-in"></i><span>Enter Stage</span>';
+        currentPreviewRoom = null;
+        refreshIcons();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/rooms/${roomId}`);
+        const data = await res.json();
+        if (data.success && data.room) {
+          currentPreviewRoom = data.room;
+          const title = data.room.title || data.room.name || 'Arena';
+          const host = data.room.owner_username || 'Host';
+          const pCount = data.participants ? data.participants.length : (data.room.online_participants_count || 0);
+
+          document.getElementById('previewRoomTitle').innerText = title;
+          document.getElementById('previewRoomHost').innerText = host;
+          document.getElementById('previewRoomId').innerText = data.room.id;
+          document.getElementById('previewRoomPlayers').innerText = pCount;
+          previewBox.style.display = 'block';
+
+          if (btnEnter) {
+            btnEnter.innerHTML = `<i data-lucide="log-in"></i><span>Enter "${escapeHtml(title)}"</span>`;
+          }
+          refreshIcons();
+        } else {
+          currentPreviewRoom = null;
+          previewBox.style.display = 'none';
+          if (btnEnter) btnEnter.innerHTML = '<i data-lucide="log-in"></i><span>Enter Stage</span>';
+          refreshIcons();
+        }
+      } catch (e) {
+        console.error('Fetch preview error', e);
+      }
+    }
+
     // 3. Rooms Management
     async function fetchActiveRooms() {
       try {
@@ -1240,23 +1466,42 @@
             return;
           }
 
-          container.innerHTML = data.rooms.map(r => `
-            <div class="draft-item-card">
-              <div class="draft-item-left">
+          container.innerHTML = data.rooms.map(r => {
+            const isMyRoom = (currentUser && currentUser.id && r.owner_id === currentUser.id);
+            return `
+            <div class="draft-item-card" style="align-items: center;">
+              <div class="draft-item-left" style="flex: 1; min-width: 0;">
                 <div class="track-icon">
                   <i data-lucide="radio"></i>
                 </div>
-                <div>
-                  <div class="track-title">${r.title || r.name}</div>
-                  <div class="track-sub">Host: <strong>${r.owner_username || 'Host'}</strong> &bull; ${r.online_participants_count || 1} Players Online</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="track-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(r.title || r.name)}</div>
+                    ${isMyRoom ? '<span class="role-badge host" style="font-size: 0.65rem; padding: 2px 6px; background: #f59e0b; color: #000; font-weight: 800;">YOU ARE HOST</span>' : ''}
+                  </div>
+                  <div class="track-sub">👑 Host: <strong>${escapeHtml(r.owner_username || 'Host')}</strong> &bull; ${r.online_participants_count || 0} Players Online</div>
+                  <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">Room ID:</span>
+                    <code class="room-id-chip" style="font-size: 0.72rem; padding: 2px 6px;">${r.id}</code>
+                  </div>
                 </div>
               </div>
-              <button class="btn btn-sm" onclick="joinRoomById('${r.id}')">
-                <i data-lucide="log-in"></i>
-                Enter Stage
-              </button>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${r.id}', 'Room ID')" title="Copy Room ID">
+                  <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                </button>
+                ${isMyRoom ? `
+                <button class="btn btn-danger btn-sm" onclick="handleDeleteRoom('${r.id}', '${escapeAttr(r.title || r.name)}')" title="Remove this room (Host Only)">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                </button>` : ''}
+                <button class="btn btn-sm" onclick="joinRoomById('${r.id}')">
+                  <i data-lucide="log-in"></i>
+                  Enter Stage
+                </button>
+              </div>
             </div>
-          `).join('');
+            `;
+          }).join('');
           refreshIcons();
         }
       } catch (err) {
@@ -1266,10 +1511,11 @@
 
     async function handleCreateRoom() {
       if (!currentUser || !currentUser.id) {
-        openAuthModal();
+        openAuthModal('Enter Your Name', 'Please enter your name before creating a room:', false);
         return;
       }
-      const title = document.getElementById('createRoomTitle').value.trim() || `${currentUser.display_name}'s Arena`;
+      const titleInput = document.getElementById('createRoomTitle');
+      const title = (titleInput && titleInput.value.trim()) || `${currentUser.display_name}'s Arena`;
       try {
         const res = await fetch('/api/rooms', {
           method: 'POST',
@@ -1282,6 +1528,8 @@
         });
         const data = await res.json();
         if (data.success && data.room) {
+          showToast(`Room "${data.room.title}" created!`);
+          await fetchActiveRooms();
           joinRoomById(data.room.id);
         } else {
           alert('Could not create room: ' + (data.error || 'Unknown error'));
@@ -1293,23 +1541,32 @@
     }
 
     function handleJoinById() {
-      const id = document.getElementById('quickRoomId').value.trim();
-      if (!id) return alert('Enter a room ID');
+      const raw = document.getElementById('quickRoomId').value.trim();
+      const id = raw;
+      if (!id) return alert('Enter a valid Room ID');
+      document.getElementById('quickRoomId').value = id;
       joinRoomById(id);
     }
 
     async function joinRoomById(roomId) {
+      if (!roomId) return alert('Invalid Room ID');
+
       if (!currentUser || !currentUser.id) {
-        await handleAuthSubmit();
+        pendingJoinRoomId = roomId;
+        const targetTitle = currentPreviewRoom ? currentPreviewRoom.title : 'Live Room';
+        openAuthModal(`Join "${targetTitle}"`, 'Enter your name or nickname to enter this room:', false);
+        return;
       }
       currentRoom = { id: roomId };
       initSocket();
 
       socket.emit('join_room', { room_id: roomId, user_id: currentUser.id }, (ack) => {
         if (ack && !ack.success) {
-          alert('Could not join room: ' + ack.error);
+          alert('Could not join room: ' + (ack.error || 'Unknown error'));
         } else {
           switchView('arena');
+          const newUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
+          window.history.replaceState({ roomId }, '', newUrl);
         }
       });
     }
@@ -1319,44 +1576,106 @@
         socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
       }
       currentRoom = null;
+      window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);
       switchView('lobby');
+      fetchActiveRooms();
     }
 
-    function copyRoomId() {
+    async function handleDeleteRoom(roomId, roomTitle) {
+      if (!currentUser || !currentUser.id) {
+        openAuthModal('Login Required', 'Please enter your name first:');
+        return;
+      }
+      const title = roomTitle || 'this room';
+      if (!confirm(`Are you sure you want to delete room "${title}"?\nAll active participants will be removed from the room.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/rooms/${roomId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: currentUser.id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Room removed successfully');
+          if (currentRoom && currentRoom.id === roomId) {
+            currentRoom = null;
+            window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);
+            switchView('lobby');
+          }
+          fetchActiveRooms();
+        } else {
+          alert('Cannot delete room: ' + (data.error || 'Permission denied'));
+        }
+      } catch (err) {
+        console.error('Delete room error', err);
+        alert('Failed to remove room');
+      }
+    }
+
+    function handleDeleteCurrentRoom() {
       if (!currentRoom || !currentRoom.id) return;
-      navigator.clipboard.writeText(currentRoom.id);
-      alert('Room ID copied to clipboard!');
+      handleDeleteRoom(currentRoom.id, currentRoom.title || currentRoom.name);
     }
 
     // 4. Render Stage & Participants
     function renderRoomState(state) {
       if (!state) return;
-      currentRoom = state;
-      document.getElementById('stageRoomTitle').innerText = state.title || 'Live Elimination Stage';
-      document.getElementById('stageRoomIdText').innerText = state.id ? `${state.id.substring(0, 8)}...` : 'None';
+      // Extract room whether it's wrapped in { room: {...} } or flat
+      const roomObj = state.room || state;
+      const roomId = roomObj.id || (currentRoom && currentRoom.id) || '';
+      const roomTitle = roomObj.title || roomObj.name || (currentRoom && (currentRoom.title || currentRoom.name)) || 'Live Elimination Stage';
 
-      renderParticipants(state.participants || []);
-      renderDrafts(state.shared_drafts || []);
-      drawWheel(state.participants || []);
+      currentRoom = {
+        ...roomObj,
+        id: roomId,
+        title: roomTitle,
+        participants: state.participants || roomObj.participants || [],
+        shared_drafts: state.shared_drafts || roomObj.shared_drafts || [],
+        active_spin: state.active_spin !== undefined ? state.active_spin : roomObj.active_spin
+      };
+
+      document.getElementById('stageRoomTitle').innerText = roomTitle;
+      const idEl = document.getElementById('stageRoomIdText');
+      if (idEl) {
+        idEl.innerText = roomId || 'None';
+        idEl.title = roomId || '';
+      }
+
+      const isHost = (currentUser && currentUser.id && (currentUser.id === roomObj.owner_id));
+      const youHostBadge = document.getElementById('stageYouAreHostBadge');
+      if (youHostBadge) youHostBadge.style.display = isHost ? 'inline-flex' : 'none';
+
+      const btnDelete = document.getElementById('btnDeleteRoom');
+      if (btnDelete) btnDelete.style.display = isHost ? 'inline-flex' : 'none';
+
+      renderParticipants(currentRoom.participants);
+      renderDrafts(currentRoom.shared_drafts);
+      drawWheel(currentRoom.participants);
+      refreshIcons();
     }
 
     function renderParticipants(list) {
       const container = document.getElementById('chamberParticipantsList');
       const countPill = document.getElementById('chamberParticipantCount');
-      const spinBadge = document.getElementById('spinEligibilityBadge');
       const btnStart = document.getElementById('btnStartSpin');
 
       countPill.innerText = `${list.length} Online`;
 
+      const isHost = (currentUser && currentRoom && currentRoom.owner_id && (currentUser.id === currentRoom.owner_id));
       const canSpin = list.length >= 3;
-      if (canSpin) {
-        spinBadge.className = 'role-badge host';
-        spinBadge.innerText = `Ready State (${list.length}/20)`;
-        btnStart.disabled = false;
-      } else {
-        spinBadge.className = 'role-badge participant';
-        spinBadge.innerText = `Waiting State (${list.length}/3 Min)`;
+
+      if (!isHost) {
         btnStart.disabled = true;
+        btnStart.title = 'Only the room host can start the spin';
+      } else if (canSpin) {
+        btnStart.disabled = false;
+        btnStart.title = 'Start Elimination Spin';
+      } else {
+        btnStart.disabled = true;
+        btnStart.title = 'Need at least 3 participants to start spin';
       }
 
       if (list.length === 0) {
@@ -1454,12 +1773,13 @@
     }
 
     function handleSpinStarted(data) {
+      switchView('arena');
+      showToast('Spin started — everyone in the room is playing!');
       document.getElementById('winnerBanner').style.display = 'none';
-      document.getElementById('stageStatusBadge').className = 'status-pill online';
-      document.getElementById('stageStatusBadge').innerText = 'Spin Active';
 
       currentSpinPlayers = data.participants || [];
       renderSpinRoster(currentSpinPlayers);
+      animateWheelSpin(currentSpinPlayers, Math.max(1000, (data.interval_ms || 5000) - 350));
       startCountdownTick();
     }
 
@@ -1472,6 +1792,7 @@
         return p;
       });
       renderSpinRoster(currentSpinPlayers);
+      animateWheelSpin(currentSpinPlayers, 4500);
 
       if (data.remaining_players && data.remaining_players.length > 1) {
         startCountdownTick();
@@ -1483,14 +1804,21 @@
 
     function handleWinnerAnnounced(data) {
       clearInterval(countdownInterval);
+      cancelAnimationFrame(wheelAnimationFrame);
       document.getElementById('hudCountdown').innerText = 'WIN';
-      document.getElementById('stageStatusBadge').className = 'status-pill';
-      document.getElementById('stageStatusBadge').innerText = 'Match Finished';
 
       const banner = document.getElementById('winnerBanner');
       banner.style.display = 'flex';
       document.getElementById('winnerNameText').innerText = data.winner.display_name || data.winner.username;
       document.getElementById('winnerPointsText').innerText = `Won +${data.winner.prize_points} Virtual Points! (Total: ${data.winner.total_points} VP)`;
+
+      if (currentUser && currentUser.id === data.winner.user_id) {
+        currentUser.virtual_points = data.winner.total_points;
+        updateUserNav();
+        showToast(`You won +${data.winner.prize_points} VP!`);
+      } else {
+        showToast(`${data.winner.display_name || data.winner.username} won the spin!`);
+      }
 
       currentSpinPlayers = currentSpinPlayers.map(p => {
         if (p.user_id === data.winner.user_id) {
@@ -1523,6 +1851,23 @@
       }, 1000);
     }
 
+    function animateWheelSpin(players, durationMs) {
+      cancelAnimationFrame(wheelAnimationFrame);
+      const startedAt = performance.now();
+      const startingRotation = wheelRotation;
+
+      const frame = (now) => {
+        const elapsed = now - startedAt;
+        const progress = Math.min(1, elapsed / durationMs);
+        wheelRotation = startingRotation + (Math.PI * 2.5 * progress);
+        drawWheel(players, wheelRotation);
+        if (progress < 1) {
+          wheelAnimationFrame = requestAnimationFrame(frame);
+        }
+      };
+      wheelAnimationFrame = requestAnimationFrame(frame);
+    }
+
     function resetSpinUi() {
       document.getElementById('winnerBanner').style.display = 'none';
       document.getElementById('hudCountdown').innerText = '--';
@@ -1549,7 +1894,7 @@
     }
 
     // 7. Dynamic Wheel Canvas Renderer
-    function drawWheel(players) {
+    function drawWheel(players, rotation = wheelRotation) {
       const canvas = document.getElementById('wheelCanvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -1565,6 +1910,11 @@
       const sliceAngle = (2 * Math.PI) / items.length;
 
       const colors = ['#00d2b4', '#38bdf8', '#818cf8', '#ec4899', '#f59e0b', '#10b981'];
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(rotation);
+      ctx.translate(-centerX, -centerY);
 
       items.forEach((p, index) => {
         const startAngle = index * sliceAngle;
@@ -1595,6 +1945,7 @@
         ctx.fillText(name.substring(0, 10), radius - 15, 4);
         ctx.restore();
       });
+      ctx.restore();
     }
 
     // 8. In-Browser Recording & Web Audio Studio
@@ -1725,12 +2076,22 @@
     }
 
     // Auto initialize on DOM ready
-    window.addEventListener('DOMContentLoaded', () => {
-      handleAuthSubmit();
-      fetchActiveRooms();
+    window.addEventListener('DOMContentLoaded', async () => {
+      loadSavedUser();
+      await fetchActiveRooms();
       drawWheel([]);
       refreshIcons();
+
+      if (!currentUser || !currentUser.id) {
+        openAuthModal('Welcome to ROXSTAR', 'Please enter your name or nickname to enter the arena:', false);
+      }
     });
   </script>
+
+  <!-- Toast Notification Element -->
+  <div id="toastNotification">
+    <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+    <span id="toastMessage">Success</span>
+  </div>
 </body>
 </html>

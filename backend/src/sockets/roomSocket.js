@@ -34,6 +34,20 @@ export async function getAuthoritativeRoomState(roomId) {
     [roomId]
   );
 
+  let activeSpin = spinRes.rows[0] || null;
+  if (activeSpin) {
+    const spinPlayersRes = await db.query(
+      `SELECT sp.user_id, sp.seat_order, sp.is_eliminated, sp.elimination_round,
+              u.username, u.display_name, u.avatar_url
+       FROM spin_participants sp
+       JOIN users u ON u.id = sp.user_id
+       WHERE sp.spin_id = $1
+       ORDER BY sp.seat_order ASC`,
+      [activeSpin.id]
+    );
+    activeSpin = { ...activeSpin, participants: spinPlayersRes.rows };
+  }
+
   const draftsRes = await db.query(
     `SELECT rsd.id AS share_id, rsd.shared_at,
             d.id AS draft_id, d.title, d.duration_ms, d.file_url, d.effect_applied,
@@ -49,7 +63,7 @@ export async function getAuthoritativeRoomState(roomId) {
   return {
     room,
     participants: membersRes.rows,
-    active_spin: spinRes.rows[0] || null,
+    active_spin: activeSpin,
     shared_drafts: draftsRes.rows,
     timestamp: new Date().toISOString(),
   };
@@ -88,6 +102,18 @@ export function registerRoomHandlers(io, socket) {
 
       // Emit full room_state directly to joining/reconnecting socket
       socket.emit('room_state', roomState);
+
+      // A participant joining during an active spin must see the same spin
+      // immediately; they may have missed the original room broadcast.
+      if (roomState?.active_spin?.status === 'RUNNING') {
+        socket.emit('spin_started', {
+          spin_id: roomState.active_spin.id,
+          room_id: room_id,
+          participants: roomState.active_spin.participants || [],
+          interval_ms: 5000,
+          start_time: roomState.active_spin.created_at,
+        });
+      }
 
       // Broadcast user_joined to all other participants in the room
       const userRes = await db.query('SELECT id, username, display_name, avatar_url, virtual_points FROM users WHERE id = $1', [user_id]);

@@ -251,6 +251,33 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         when (event) {
             is SocketEvent.RoomStateReceived -> {
                 _currentRoom.value = event.room
+                val activeSpin = event.activeSpin
+                if (activeSpin?.optString("status") == "RUNNING") {
+                    val players = mutableListOf<RoomMember>()
+                    val participants = activeSpin.optJSONArray("participants")
+                    if (participants != null) {
+                        for (i in 0 until participants.length()) {
+                            val p = participants.getJSONObject(i)
+                            players.add(
+                                RoomMember(
+                                    userId = p.optString("user_id"),
+                                    username = p.optString("username", "Player"),
+                                    role = "PARTICIPANT",
+                                    isOnline = !p.optBoolean("is_eliminated", false),
+                                    avatarUrl = p.optString("avatar_url", null)
+                                )
+                            )
+                        }
+                    }
+                    _spinState.value = SpinState(
+                        status = "RUNNING",
+                        spinId = activeSpin.optString("id"),
+                        activePlayers = players,
+                        countdownSeconds = 5
+                    )
+                    _statusMessage.value = "Spin started for everyone in the room"
+                    startCountdownTicker()
+                }
             }
 
             is SocketEvent.UserJoined -> {
@@ -307,6 +334,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                     winner = null,
                     countdownSeconds = 5
                 )
+                _statusMessage.value = "Spin started for everyone in the room"
                 startCountdownTicker()
             }
 
@@ -337,6 +365,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                 if (user?.id == event.winner.userId) {
                     _currentUser.value = user.copy(virtualPoints = event.winner.totalPoints)
                 }
+                _statusMessage.value = "${event.winner.username} won +${event.winner.prizePoints} virtual points"
             }
 
             is SocketEvent.SpinAborted -> {

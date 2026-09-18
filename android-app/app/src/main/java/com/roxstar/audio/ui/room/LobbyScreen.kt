@@ -37,6 +37,7 @@ fun LobbyScreen(
 
     var usernameInput by remember { mutableStateOf("") }
     var roomNameInput by remember { mutableStateOf("") }
+    var joinRoomIdInput by remember { mutableStateOf("") }
     var showServerSettings by remember { mutableStateOf(false) }
     var serverUrlInput by remember { mutableStateOf(serverUrl) }
 
@@ -223,6 +224,55 @@ fun LobbyScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 2b. Quick Join by Room ID Card
+        if (currentUser != null) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = CardBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "Join Room by ID",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = joinRoomIdInput,
+                            onValueChange = { joinRoomIdInput = it },
+                            placeholder = { Text("Paste Room UUID...") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = CardBorder
+                            )
+                        )
+                        Button(
+                            onClick = {
+                                viewModel.joinRoom(joinRoomIdInput.trim())
+                            },
+                            enabled = !isLoading && joinRoomIdInput.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                        ) {
+                            Text("Join")
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // 3. Active Rooms List
@@ -367,35 +417,62 @@ fun RoomItemCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = room.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "👥 ${room.participantCount} online",
-                    fontSize = 12.sp,
-                    color = TextMuted
-                )
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = room.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "👥 ${room.participantCount} online",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Button(
+                        onClick = onJoin,
+                        enabled = canJoin,
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Join")
+                    }
+                }
             }
 
-            Button(
-                onClick = onJoin,
-                enabled = canJoin,
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                shape = RoundedCornerShape(8.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = Accent.copy(alpha = 0.08f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Accent.copy(alpha = 0.25f))
             ) {
-                Text("Join")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ID: ${room.id}",
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        fontSize = 11.sp,
+                        color = Accent
+                    )
+                }
             }
         }
     }

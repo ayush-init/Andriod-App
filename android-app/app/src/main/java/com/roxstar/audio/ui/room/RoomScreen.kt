@@ -92,10 +92,27 @@ fun RoomScreen(
                             fontSize = 12.sp,
                             color = TextMuted
                         )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Accent.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Accent.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "ID: ${room.id}",
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontSize = 11.sp,
+                                color = Accent,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     IconButton(onClick = { viewModel.refreshCurrentRoom() }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,

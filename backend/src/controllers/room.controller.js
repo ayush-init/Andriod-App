@@ -341,3 +341,47 @@ export const startRoomSpin = async (req, res, next) => {
   }
 };
 
+export const deleteRoom = async (req, res, next) => {
+  try {
+    const { id: room_id } = req.params;
+    const user_id = req.body?.user_id || req.query?.user_id;
+
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'User ID is required to remove room.' });
+    }
+
+    const roomRes = await db.query('SELECT * FROM rooms WHERE id = $1', [room_id]);
+    if (roomRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Room not found.' });
+    }
+
+    const room = roomRes.rows[0];
+    if (room.owner_id !== user_id) {
+      return res.status(403).json({ success: false, error: 'Only the room host can remove this room.' });
+    }
+
+    // Notify connected socket clients in this room
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(room_id).emit('room_deleted', {
+          room_id,
+          message: `Room "${room.title}" was removed by the host.`,
+        });
+      }
+    } catch (e) {
+      // Ignore if socket server not initialized in test context
+    }
+
+    // Delete room from database (cascades to room_members, spins, drafts, etc.)
+    await db.query('DELETE FROM rooms WHERE id = $1', [room_id]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Room removed successfully.',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
