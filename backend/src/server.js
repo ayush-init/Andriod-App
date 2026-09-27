@@ -37,6 +37,8 @@ async function onServerStartup() {
           [spin.id]
         );
       }
+    }
+
     // Clean up any stale online room memberships from previous server run
     const membersCleanRes = await db.query(`
       UPDATE room_members 
