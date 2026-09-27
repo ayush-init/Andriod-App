@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val prefs = getSharedPreferences("roxstar_prefs", Context.MODE_PRIVATE)
-        val initialDark = prefs.getBoolean("is_dark_mode", true)
+        val initialDark = prefs.getBoolean("is_dark_mode", false)
 
         // Check initial permission
         hasRecordAudioPermission = ContextCompat.checkSelfPermission(
@@ -117,15 +117,15 @@ class MainActivity : ComponentActivity() {
                                     // Brand Logo & Title
                                     RoxstarLogo(size = 38.dp, showText = true)
 
-                                    // Right controls: Connection pill, VP points, Theme switch
+                                    // Right controls: Connection badge, VP points, Theme switch
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        // Live Cloud Status Pill
+                                        // Live Cloud Status Badge (Sleek rounded rectangle)
                                         Box(
                                             modifier = Modifier
-                                                .clip(RoundedCornerShape(20.dp))
+                                                .clip(RoundedCornerShape(8.dp))
                                                 .background(
                                                     if (isConnected) RoxstarSuccess.copy(alpha = 0.16f)
                                                     else RoxstarDanger.copy(alpha = 0.16f)
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                                                     1.dp,
                                                     if (isConnected) RoxstarSuccess.copy(alpha = 0.4f)
                                                     else RoxstarDanger.copy(alpha = 0.4f),
-                                                    RoundedCornerShape(20.dp)
+                                                    RoundedCornerShape(8.dp)
                                                 )
                                                 .padding(horizontal = 9.dp, vertical = 4.dp),
                                             contentAlignment = Alignment.Center
@@ -162,10 +162,10 @@ class MainActivity : ComponentActivity() {
                                         if (currentUser != null) {
                                             Box(
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(20.dp))
+                                                    .clip(RoundedCornerShape(8.dp))
                                                     .background(RoxstarAmber.copy(alpha = 0.18f))
-                                                    .border(1.dp, RoxstarAmber.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
-                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    .border(1.dp, RoxstarAmber.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                                             ) {
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
@@ -262,7 +262,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 statusMessage?.let { msg ->
                                     GlassCard(
-                                        shape = RoundedCornerShape(24.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         backgroundColor = glassColors.glassSurface,
                                         borderColor = RoxstarAccent.copy(alpha = 0.6f),
                                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
@@ -292,5 +292,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        roomViewModel.leaveRoom()
     }
 }

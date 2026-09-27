@@ -37,8 +37,15 @@ async function onServerStartup() {
           [spin.id]
         );
       }
-    } else {
-      logger.info('Startup Recovery: No zombie spins detected. State clean.');
+    // Clean up any stale online room memberships from previous server run
+    const membersCleanRes = await db.query(`
+      UPDATE room_members 
+      SET is_online = false, left_at = NOW() 
+      WHERE is_online = true
+      RETURNING id;
+    `);
+    if (membersCleanRes.rowCount > 0) {
+      logger.info(`Startup Recovery: Reset ${membersCleanRes.rowCount} stale online room memberships to offline.`);
     }
   } catch (err) {
     logger.error('Startup Recovery error:', err);

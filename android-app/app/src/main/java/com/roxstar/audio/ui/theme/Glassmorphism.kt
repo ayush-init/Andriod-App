@@ -67,11 +67,11 @@ val LightGlassColors = GlassColors(
     cardBackground = LightGlassSurface
 )
 
-val LocalGlassColors = staticCompositionLocalOf { DarkGlassColors }
+val LocalGlassColors = staticCompositionLocalOf { LightGlassColors }
 
 /**
- * Atmospheric background mesh container that paints ambient glowing orbs
- * matching the reference design in both Dark and Light modes.
+ * Atmospheric background container that paints a clean frosted glass canvas
+ * (without color gradient orbs) in both Light (default) and Dark modes.
  */
 @Composable
 fun AtmosphericBackground(
@@ -80,74 +80,22 @@ fun AtmosphericBackground(
     content: @Composable BoxScope.() -> Unit
 ) {
     val baseCanvas = if (isDark) DarkCanvas else LightCanvas
-    val roseGlow = if (isDark) Color(0x3DF43F5E) else Color(0x22F43F5E)
-    val violetGlow = if (isDark) Color(0x358B5CF6) else Color(0x1E8B5CF6)
-    val amberGlow = if (isDark) Color(0x28FB923C) else Color(0x18FB923C)
-    val cyanGlow = if (isDark) Color(0x2006B6D4) else Color(0x1406B6D4)
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(baseCanvas)
-            .drawBehind {
-                val w = size.width
-                val h = size.height
-
-                // Orb 1: Top-Right Vibrant Rose Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(roseGlow, Color.Transparent),
-                        center = Offset(w * 0.85f, h * 0.18f),
-                        radius = w * 0.75f
-                    ),
-                    center = Offset(w * 0.85f, h * 0.18f),
-                    radius = w * 0.75f
-                )
-
-                // Orb 2: Mid-Left Deep Violet Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(violetGlow, Color.Transparent),
-                        center = Offset(w * 0.12f, h * 0.42f),
-                        radius = w * 0.70f
-                    ),
-                    center = Offset(w * 0.12f, h * 0.42f),
-                    radius = w * 0.70f
-                )
-
-                // Orb 3: Bottom-Right Warm Amber/Coral Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(amberGlow, Color.Transparent),
-                        center = Offset(w * 0.88f, h * 0.78f),
-                        radius = w * 0.65f
-                    ),
-                    center = Offset(w * 0.88f, h * 0.78f),
-                    radius = w * 0.65f
-                )
-
-                // Orb 4: Bottom-Left Cyber Cyan Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(cyanGlow, Color.Transparent),
-                        center = Offset(w * 0.15f, h * 0.88f),
-                        radius = w * 0.55f
-                    ),
-                    center = Offset(w * 0.15f, h * 0.88f),
-                    radius = w * 0.55f
-                )
-            },
+            .background(baseCanvas),
         content = content
     )
 }
 
 /**
- * Ultra-rounded frosted glass card with specular highlight border.
+ * Crisp frosted glass card with subtle specular border (sleek rounded rectangle).
  */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
+    shape: Shape = RoundedCornerShape(14.dp),
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     borderWidth: Dp = 1.dp,
@@ -217,9 +165,9 @@ fun GlassSegmentedPill(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(glassColors.glassSurface.copy(alpha = 0.5f))
-            .border(1.dp, glassColors.glassBorderSubtle, RoundedCornerShape(32.dp))
+            .border(1.dp, glassColors.glassBorderSubtle, RoundedCornerShape(10.dp))
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -238,10 +186,10 @@ fun GlassSegmentedPill(
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(itemBackground)
                     .clickable { onSelect(index) }
-                    .padding(horizontal = 16.dp, vertical = 7.dp),
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -256,7 +204,7 @@ fun GlassSegmentedPill(
 }
 
 /**
- * Status or counter pill badge (e.g. "Active", "+1K", "44.1kHz").
+ * Sleek status or counter badge (e.g. "Active", "+1K", "44.1kHz").
  */
 @Composable
 fun GlassBadge(
@@ -268,10 +216,10 @@ fun GlassBadge(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(6.dp))
             .background(backgroundColor)
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(

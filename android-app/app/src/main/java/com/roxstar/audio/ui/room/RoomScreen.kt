@@ -80,7 +80,7 @@ fun RoomScreen(
         // Room Top Bar Glass Card
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(12.dp)
         ) {
             Row(
@@ -338,7 +338,7 @@ private fun RoomAudioSection(
     ) {
         // Online Participants Strip
         GlassCard(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -356,9 +356,9 @@ private fun RoomAudioSection(
                 items(room.members, key = { it.userId }) { member ->
                     Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(glassColors.glassSurfaceLight)
-                            .border(1.dp, glassColors.glassBorderSubtle, RoundedCornerShape(16.dp))
+                            .border(1.dp, glassColors.glassBorderSubtle, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -429,7 +429,7 @@ private fun RoomAudioSection(
                 contentAlignment = Alignment.Center
             ) {
                 GlassCard(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(24.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -487,7 +487,7 @@ fun GlassSharedDraftCard(
     val glassColors = LocalGlassColors.current
 
     GlassCard(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {

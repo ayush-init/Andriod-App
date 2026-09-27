@@ -14,20 +14,54 @@
 
   <style>
     :root {
+      /* Crisp Light Glass Theme by Default (Clean, professional, no gradients) */
+      --bg-root: #f6f8fc;
+      --bg-surface: rgba(255, 255, 255, 0.90);
+      --bg-card: rgba(255, 255, 255, 0.96);
+      --bg-card-hover: #ffffff;
+      --border-subtle: rgba(15, 23, 42, 0.09);
+      --border-glass: rgba(255, 255, 255, 0.85);
+      --border-focus: #4f46e5;
+      
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-subtle: rgba(79, 70, 229, 0.10);
+      
+      --host-accent: #0284c7;
+      --host-subtle: rgba(2, 132, 199, 0.12);
+      
+      --danger: #e11d48;
+      --danger-subtle: rgba(225, 29, 72, 0.12);
+      
+      --warning: #d97706;
+      --warning-subtle: rgba(217, 119, 6, 0.12);
+      
+      --success: #059669;
+      --success-subtle: rgba(5, 150, 105, 0.12);
+
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    [data-theme="dark"] {
       --bg-root: #0a0d14;
       --bg-surface: #121722;
       --bg-card: #151b28;
       --bg-card-hover: #1b2334;
       --border-subtle: #1e2638;
-      --border-focus: #00d2b4;
+      --border-glass: rgba(255, 255, 255, 0.14);
+      --border-focus: #6366f1;
       
       --text-primary: #f1f5f9;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
       
-      --accent: #00d2b4;
-      --accent-hover: #00b89d;
-      --accent-subtle: rgba(0, 210, 180, 0.12);
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-subtle: rgba(99, 102, 241, 0.16);
       
       --host-accent: #38bdf8;
       --host-subtle: rgba(56, 189, 248, 0.15);
@@ -40,8 +74,6 @@
       
       --success: #10b981;
       --success-subtle: rgba(16, 185, 129, 0.15);
-
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     * {
@@ -117,7 +149,7 @@
       align-items: center;
       gap: 6px;
       padding: 5px 12px;
-      border-radius: 9999px;
+      border-radius: 6px;
       font-size: 0.78rem;
       font-weight: 600;
       background: rgba(100, 116, 139, 0.15);
@@ -143,7 +175,7 @@
       padding: 5px 12px 5px 6px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 9999px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -362,7 +394,7 @@
       border: 1px solid var(--border-subtle);
       color: var(--text-secondary);
       padding: 6px 12px;
-      border-radius: 20px;
+      border-radius: 8px;
       font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
@@ -427,7 +459,7 @@
       align-items: center;
       justify-content: center;
       padding: 2px 10px;
-      border-radius: 9999px;
+      border-radius: 6px;
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -730,6 +762,9 @@
     </div>
 
     <div class="header-actions">
+      <button id="themeToggleBtn" onclick="toggleTheme()" class="theme-toggle-btn" title="Toggle Theme" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 6px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-primary); cursor: pointer; transition: all 0.2s;">
+        <i data-lucide="moon" id="themeIcon" style="width: 17px; height: 17px;"></i>
+      </button>
       <div id="connectionStatus" class="status-pill">
         <span class="status-dot"></span>
         <span id="connectionStatusText">Offline</span>
@@ -1153,12 +1188,35 @@
       return null;
     }
 
+    // Theme management
+    function initTheme() {
+      const saved = localStorage.getItem('roxstar_theme') || 'light';
+      applyTheme(saved);
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      localStorage.setItem('roxstar_theme', next);
+    }
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+      }
+    }
+
     function persistActiveRoom(roomId) {
-      try { localStorage.setItem('roxstar_active_room', roomId); } catch (e) {}
+      try { sessionStorage.setItem('roxstar_active_room', roomId); } catch (e) {}
     }
 
     function clearPersistedRoom() {
-      try { localStorage.removeItem('roxstar_active_room'); } catch (e) {}
+      try {
+        sessionStorage.removeItem('roxstar_active_room');
+        localStorage.removeItem('roxstar_active_room');
+      } catch (e) {}
     }
 
     function joinCurrentRoom() {
@@ -1586,16 +1644,7 @@
     }
 
     
-    window.addEventListener('beforeunload', () => {
-      if (socket && socket.connected && currentRoom && currentUser) {
-        socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
-      }
-    });
-    window.addEventListener('pagehide', () => {
-      if (socket && socket.connected && currentRoom && currentUser) {
-        socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
-      }
-    });
+
 
     function handleLeaveRoom() {
       if (socket && currentRoom && currentUser) {
@@ -2106,7 +2155,9 @@
     // Auto initialize on DOM ready
     window.addEventListener('DOMContentLoaded', async () => {
       loadSavedUser();
-      const savedRoomId = localStorage.getItem('roxstar_active_room');
+      initTheme();
+      const savedRoomId = sessionStorage.getItem('roxstar_active_room');
+      localStorage.removeItem('roxstar_active_room');
       if (savedRoomId) {
         if (currentUser && currentUser.id) {
           currentRoom = { id: savedRoomId };

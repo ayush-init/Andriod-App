@@ -69,6 +69,47 @@ export async function getAuthoritativeRoomState(roomId) {
   };
 }
 
+// Map of pending disconnect grace timers across browser reloads / quick reconnects
+// key: `${userId}:${roomId}` -> Timeout
+const pendingDisconnects = new Map();
+
+async function removeUserFromRoom(roomId, userId, io, reason = 'DISCONNECTED') {
+  try {
+    const leavingUserRes = await db.query(
+      'SELECT id, username, display_name FROM users WHERE id = $1',
+      [userId]
+    );
+    const leavingUser = leavingUserRes.rows[0] || { id: userId, username: 'Participant', display_name: 'Participant' };
+
+    // Update DB presence
+    await db.query(
+      `UPDATE room_members
+       SET is_online = false, left_at = NOW()
+       WHERE room_id = $1 AND user_id = $2`,
+      [roomId, userId]
+    );
+
+    // Update active spin state machine if a spin is running
+    await SpinStateMachine.handleParticipantLeave(roomId, userId, io);
+
+    const roomState = await getAuthoritativeRoomState(roomId);
+
+    // Broadcast user_left event to all remaining members in the room
+    io.to(`room:${roomId}`).emit('user_left', {
+      user_id: userId,
+      username: leavingUser.username,
+      display_name: leavingUser.display_name,
+      reason: reason,
+      participants: roomState ? roomState.participants : [],
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info(`Presence: User [${userId}] removed from Room [${roomId}] (${reason}).`);
+  } catch (err) {
+    logger.error(`Error removing user [${userId}] from room [${roomId}]:`, err);
+  }
+}
+
 export function registerRoomHandlers(io, socket) {
   /**
    * 1. JOIN ROOM & STATE SYNC
@@ -79,6 +120,13 @@ export function registerRoomHandlers(io, socket) {
       if (!room_id || !user_id) {
         if (callback) callback({ success: false, error: 'room_id and user_id are required' });
         return;
+      }
+
+      const pendingKey = `${user_id}:${room_id}`;
+      if (pendingDisconnects.has(pendingKey)) {
+        clearTimeout(pendingDisconnects.get(pendingKey));
+        pendingDisconnects.delete(pendingKey);
+        logger.info(`User [${user_id}] reconnected to Room [${room_id}] within grace period. Cancelled disconnect.`);
       }
 
       logger.info(`Socket [${socket.id}] User [${user_id}] joining Room [${room_id}]`);
@@ -220,37 +268,18 @@ export function registerRoomHandlers(io, socket) {
         return;
       }
 
-      logger.info(`Socket User [${targetUserId}] left Room [${targetRoomId}]`);
+      logger.info(`Socket User [${targetUserId}] left Room [${targetRoomId}] explicitly`);
 
-      const leavingUserRes = await db.query(
-        'SELECT id, username, display_name FROM users WHERE id = $1',
-        [targetUserId]
-      );
-      const leavingUser = leavingUserRes.rows[0] || { id: targetUserId, username: 'Participant', display_name: 'Participant' };
-
-      // Update DB presence
-      await db.query(
-        `UPDATE room_members
-         SET is_online = false, left_at = NOW()
-         WHERE room_id = $1 AND user_id = $2`,
-        [targetRoomId, targetUserId]
-      );
+      const pendingKey = `${targetUserId}:${targetRoomId}`;
+      if (pendingDisconnects.has(pendingKey)) {
+        clearTimeout(pendingDisconnects.get(pendingKey));
+        pendingDisconnects.delete(pendingKey);
+      }
 
       socket.leave(`room:${targetRoomId}`);
-      // Edge Case 4 & 6: Update active spin state machine if a spin is running
-      await SpinStateMachine.handleParticipantLeave(targetRoomId, targetUserId, io);
+      socket.data.roomId = null;
 
-      const roomState = await getAuthoritativeRoomState(targetRoomId);
-
-      // Broadcast user_left event to remaining members
-      socket.to(`room:${targetRoomId}`).emit('user_left', {
-        user_id: targetUserId,
-        username: leavingUser.username,
-        display_name: leavingUser.display_name,
-        reason: 'LEFT_ROOM',
-        participants: roomState ? roomState.participants : [],
-        timestamp: new Date().toISOString(),
-      });
+      await removeUserFromRoom(targetRoomId, targetUserId, io, 'LEFT_ROOM');
 
       if (callback) callback({ success: true });
     } catch (err) {
@@ -262,12 +291,31 @@ export function registerRoomHandlers(io, socket) {
   /**
    * 5. DISCONNECT & CLEANUP
    */
-  socket.on('disconnect', async (reason) => {
-    // A browser reload/network interruption is not a voluntary room leave.
-    // Keep membership online so the user remains in the room and is restored
-    // by the next join_room emitted after the socket reconnects. Only the
-    // explicit leave_room event changes room membership and spin eligibility.
-    logger.info(`Socket [${socket.id}] disconnected (${reason}); preserving room membership.`);
+  socket.on('disconnect', (reason) => {
+    const roomId = socket.data?.roomId;
+    const userId = socket.data?.userId;
+
+    if (!roomId || !userId) {
+      logger.info(`Socket [${socket.id}] disconnected (${reason}) with no active room.`);
+      return;
+    }
+
+    const pendingKey = `${userId}:${roomId}`;
+    if (pendingDisconnects.has(pendingKey)) {
+      clearTimeout(pendingDisconnects.get(pendingKey));
+    }
+
+    logger.info(`Socket [${socket.id}] User [${userId}] disconnected (${reason}). Scheduling 3.5s grace timer for reload/reconnect.`);
+
+    // 3.5s grace timer:
+    // If the user reloaded the page or experienced a network flicker, the new socket joins within 1-2s and cancels this timer.
+    // If the user closed Chrome tab/browser or closed the mobile app, this timer fires and cleanly removes them from the room.
+    const timer = setTimeout(async () => {
+      pendingDisconnects.delete(pendingKey);
+      await removeUserFromRoom(roomId, userId, io, 'DISCONNECTED');
+    }, 3500);
+
+    pendingDisconnects.set(pendingKey, timer);
   });
 
   /**

@@ -50,7 +50,7 @@ fun DraftsScreen(
         // Top Header Glass Card
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)
         ) {
             Row(
@@ -91,7 +91,7 @@ fun DraftsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 GlassCard(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(32.dp)
                 ) {
                     Column(
@@ -201,7 +201,7 @@ fun GlassDraftCard(
 
     GlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(14.dp)
     ) {
         Row(

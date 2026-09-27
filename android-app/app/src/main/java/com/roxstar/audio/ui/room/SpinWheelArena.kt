@@ -58,7 +58,7 @@ fun SpinWheelArena(
     ) {
         // Status & Countdown Header Glass Card
         GlassCard(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -288,7 +288,7 @@ fun GlassPlayerSeatCard(
     }
 
     GlassCard(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(12.dp),
         backgroundColor = cardBg,
         borderColor = cardBorder,
         contentPadding = PaddingValues(12.dp)

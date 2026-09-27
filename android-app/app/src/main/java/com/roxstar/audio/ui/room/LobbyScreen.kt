@@ -59,7 +59,7 @@ fun LobbyScreen(
         // Top Header Glass Card
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(
@@ -105,7 +105,7 @@ fun LobbyScreen(
         // 1. User Profile / Login Glass Card
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(14.dp)
         ) {
             if (currentUser == null) {
@@ -219,7 +219,7 @@ fun LobbyScreen(
                 // Create Room Glass Card
                 GlassCard(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(12.dp)
                 ) {
                     Text(
@@ -262,7 +262,7 @@ fun LobbyScreen(
                 // Join by ID Glass Card
                 GlassCard(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(12.dp)
                 ) {
                     Text(
@@ -351,7 +351,7 @@ fun LobbyScreen(
                 contentAlignment = Alignment.Center
             ) {
                 GlassCard(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(14.dp),
                     contentPadding = PaddingValues(24.dp)
                 ) {
                     Column(
@@ -498,7 +498,7 @@ fun GlassRoomItemCard(
     val shortId = if (room.id.length >= 6) room.id.take(6) else room.id
 
     GlassCard(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(10.dp),
         contentPadding = PaddingValues(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {

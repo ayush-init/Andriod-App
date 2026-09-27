@@ -61,15 +61,15 @@ fun GlassBottomDock(
             .padding(horizontal = 24.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Floating glass capsule
+        // Floating glass dock (sleek rounded rectangle)
         Row(
             modifier = Modifier
                 .shadow(
                     elevation = if (glassColors.isDark) 16.dp else 12.dp,
-                    shape = RoundedCornerShape(36.dp),
+                    shape = RoundedCornerShape(14.dp),
                     spotColor = if (glassColors.isDark) Color(0x66000000) else Color(0x33000000)
                 )
-                .clip(RoundedCornerShape(36.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(
                     if (glassColors.isDark) {
                         Color(0xD9171928)
@@ -94,7 +94,7 @@ fun GlassBottomDock(
                             )
                         )
                     },
-                    RoundedCornerShape(36.dp)
+                    RoundedCornerShape(14.dp)
                 )
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -138,9 +138,9 @@ fun GlassBottomDock(
 
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(28.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .background(animatedBg)
-                        .border(1.dp, animatedBorder, RoundedCornerShape(28.dp))
+                        .border(1.dp, animatedBorder, RoundedCornerShape(10.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null

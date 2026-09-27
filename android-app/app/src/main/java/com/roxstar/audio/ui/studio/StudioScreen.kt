@@ -68,7 +68,7 @@ fun StudioScreen(
         // 1. Studio Header & Engine Status Card
         GlassCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Row(
@@ -262,9 +262,9 @@ fun StudioScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // 3. DSP Audio Effect Mode Pills (Dry / Echo / Reverb)
+            // 3. DSP Audio Effect Mode Selector (Dry / Echo / Reverb)
             GlassCard(
-                shape = RoundedCornerShape(30.dp),
+                shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp)
             ) {
                 Row(
@@ -288,11 +288,11 @@ fun StudioScreen(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(22.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(pillBg)
-                                .border(1.dp, pillBorder, RoundedCornerShape(22.dp))
+                                .border(1.dp, pillBorder, RoundedCornerShape(8.dp))
                                 .clickable { viewModel.setEffectMode(mode) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -397,7 +397,7 @@ fun StudioScreen(
                     Button(
                         onClick = { showSaveDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(50.dp)
                     ) {
                         Text("Save Voice Draft", fontWeight = FontWeight.Bold, fontSize = 15.sp)
