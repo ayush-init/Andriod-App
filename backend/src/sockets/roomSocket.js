@@ -117,7 +117,7 @@ export function registerRoomHandlers(io, socket) {
 
       // Broadcast user_joined to all other participants in the room
       const userRes = await db.query('SELECT id, username, display_name, avatar_url, virtual_points FROM users WHERE id = $1', [user_id]);
-      const joinedUser = userRes.rows[0];
+      const joinedUser = userRes.rows[0] || { id: user_id, username: 'Participant', display_name: 'Participant' };
 
       socket.to(`room:${room_id}`).emit('user_joined', {
         user: joinedUser,
@@ -226,7 +226,7 @@ export function registerRoomHandlers(io, socket) {
         'SELECT id, username, display_name FROM users WHERE id = $1',
         [targetUserId]
       );
-      const leavingUser = leavingUserRes.rows[0] || { id: targetUserId };
+      const leavingUser = leavingUserRes.rows[0] || { id: targetUserId, username: 'Participant', display_name: 'Participant' };
 
       // Update DB presence
       await db.query(

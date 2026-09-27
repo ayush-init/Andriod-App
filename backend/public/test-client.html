@@ -1317,11 +1317,14 @@
 
       socket.on('user_joined', (data) => {
         renderParticipants(data.participants || []);
+        const name = (data.user && (data.user.display_name || data.user.username)) || 'A participant';
+        showToast('👋 ' + name + ' joined the room.');
       });
 
       socket.on('user_left', (data) => {
         renderParticipants(data.participants || []);
-        showToast(`${data.display_name || data.username || 'A participant'} left the room.`);
+        const name = data.display_name || data.username || 'A participant';
+        showToast('👋 ' + name + ' left the room.');
       });
 
       socket.on('room_deleted', (data) => {
@@ -1582,10 +1585,23 @@
       if (socket.connected) joinCurrentRoom();
     }
 
+    
+    window.addEventListener('beforeunload', () => {
+      if (socket && socket.connected && currentRoom && currentUser) {
+        socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
+      }
+    });
+    window.addEventListener('pagehide', () => {
+      if (socket && socket.connected && currentRoom && currentUser) {
+        socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
+      }
+    });
+
     function handleLeaveRoom() {
       if (socket && currentRoom && currentUser) {
         socket.emit('leave_room', { room_id: currentRoom.id, user_id: currentUser.id });
       }
+      showToast('You left the room.');
       clearPersistedRoom();
       currentRoom = null;
       window.history.replaceState({}, '', `${window.location.origin}${window.location.pathname}`);

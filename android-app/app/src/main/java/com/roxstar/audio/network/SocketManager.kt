@@ -113,9 +113,12 @@ class SocketManager {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
                         val userObj = json.optJSONObject("user") ?: json
+                        val memberName = userObj.optString("display_name").ifBlank {
+                            userObj.optString("username", "Participant")
+                        }
                         val member = RoomMember(
                             userId = userObj.optString("user_id", userObj.optString("id")),
-                            username = userObj.optString("username", "Participant"),
+                            username = memberName,
                             role = userObj.optString("role", "PARTICIPANT"),
                             isOnline = true,
                             avatarUrl = userObj.optString("avatar_url", null)
@@ -125,10 +128,13 @@ class SocketManager {
                         if (partsArr != null) {
                             for (i in 0 until partsArr.length()) {
                                 val pObj = partsArr.getJSONObject(i)
+                                val pName = pObj.optString("display_name").ifBlank {
+                                    pObj.optString("username", "User")
+                                }
                                 partsList.add(
                                     RoomMember(
                                         userId = pObj.optString("user_id", pObj.optString("id")),
-                                        username = pObj.optString("username", "User"),
+                                        username = pName,
                                         role = pObj.optString("role", "PARTICIPANT"),
                                         isOnline = pObj.optBoolean("is_online", true),
                                         avatarUrl = pObj.optString("avatar_url", null)
@@ -148,16 +154,21 @@ class SocketManager {
                     if (args.isNotEmpty() && args[0] is JSONObject) {
                         val json = args[0] as JSONObject
                         val uid = json.optString("user_id", "")
-                        val uname = json.optString("username", "")
+                        val uname = json.optString("display_name").ifBlank {
+                            json.optString("username", "A participant")
+                        }
                         val partsList = mutableListOf<RoomMember>()
                         val partsArr = json.optJSONArray("participants")
                         if (partsArr != null) {
                             for (i in 0 until partsArr.length()) {
                                 val pObj = partsArr.getJSONObject(i)
+                                val pName = pObj.optString("display_name").ifBlank {
+                                    pObj.optString("username", "User")
+                                }
                                 partsList.add(
                                     RoomMember(
                                         userId = pObj.optString("user_id", pObj.optString("id")),
-                                        username = pObj.optString("username", "User"),
+                                        username = pName,
                                         role = pObj.optString("role", "PARTICIPANT"),
                                         isOnline = pObj.optBoolean("is_online", false),
                                         avatarUrl = pObj.optString("avatar_url", null)

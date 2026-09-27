@@ -4,12 +4,12 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,9 +29,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import com.roxstar.audio.ui.components.GlassBottomDock
 import com.roxstar.audio.ui.components.RoxstarLogo
@@ -83,6 +85,15 @@ class MainActivity : ComponentActivity() {
                 val currentRoom by roomViewModel.currentRoom.collectAsState()
                 val currentUser by roomViewModel.currentUser.collectAsState()
                 val isConnected by roomViewModel.isConnected.collectAsState()
+                val statusMessage by roomViewModel.statusMessage.collectAsState()
+                val context = LocalContext.current
+
+                // Show native Android Toast immediately on new message
+                LaunchedEffect(statusMessage) {
+                    statusMessage?.let { msg ->
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
 
                 AtmosphericBackground(isDark = isDarkMode) {
                     Scaffold(
@@ -235,6 +246,44 @@ class MainActivity : ComponentActivity() {
                                             viewModel = roomViewModel,
                                             modifier = Modifier.fillMaxSize()
                                         )
+                                    }
+                                }
+                            }
+
+                            // Prominent In-App Floating Glass Toast Pill
+                            AnimatedVisibility(
+                                visible = !statusMessage.isNullOrBlank(),
+                                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 10.dp, start = 16.dp, end = 16.dp)
+                                    .zIndex(99f)
+                            ) {
+                                statusMessage?.let { msg ->
+                                    GlassCard(
+                                        shape = RoundedCornerShape(24.dp),
+                                        backgroundColor = glassColors.glassSurface,
+                                        borderColor = RoxstarAccent.copy(alpha = 0.6f),
+                                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(RoxstarAccent)
+                                            )
+                                            Text(
+                                                text = msg,
+                                                color = glassColors.textPrimary,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
                                     }
                                 }
                             }

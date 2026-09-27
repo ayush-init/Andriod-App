@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,6 +60,10 @@ fun RoomScreen(
     var selectedSubTab by remember { mutableStateOf(0) } // 0: Room & Audio, 1: Spin Wheel
     var showShareDraftDialog by remember { mutableStateOf(false) }
     var showRemoveRoomDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        viewModel.leaveRoom()
+    }
 
     // If a spin is actively running, auto-switch to Spin tab
     LaunchedEffect(spinState.status) {
@@ -314,20 +319,6 @@ fun RoomScreen(
                 }
             }
         )
-    }
-
-    // Status snackbar
-    statusMessage?.let { msg ->
-        Snackbar(
-            action = {
-                TextButton(onClick = { viewModel.clearStatusMessage() }) {
-                    Text("OK", color = RoxstarAccent)
-                }
-            },
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(msg)
-        }
     }
 }
 

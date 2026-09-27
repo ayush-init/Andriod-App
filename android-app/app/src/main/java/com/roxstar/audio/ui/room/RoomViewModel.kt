@@ -53,6 +53,19 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
+    private var statusClearJob: Job? = null
+
+    fun postStatus(message: String) {
+        _statusMessage.value = message
+        statusClearJob?.cancel()
+        statusClearJob = viewModelScope.launch {
+            delay(3500)
+            if (_statusMessage.value == message) {
+                _statusMessage.value = null
+            }
+        }
+    }
+
     // Shared Draft Playback
     private var roomAudioPlayer: MediaPlayer? = null
     private val _playingDraftId = MutableStateFlow<String?>(null)
@@ -162,6 +175,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         socketManager.leaveRoom(room.id, user.id)
         _currentRoom.value = null
         _spinState.value = SpinState()
+        postStatus("You left the room")
         refreshActiveRooms()
     }
 
@@ -173,13 +187,13 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             val result = apiClient.deleteRoom(room.id, user.id)
             _isLoading.value = false
             result.onSuccess {
-                _statusMessage.value = "Room removed by host"
+                postStatus("Room deleted by host")
                 _currentRoom.value = null
                 _spinState.value = SpinState()
                 socketManager.disconnect()
                 refreshActiveRooms()
             }.onFailure { err ->
-                _statusMessage.value = "Could not remove room: ${err.message}"
+                postStatus("Could not remove room: ${err.message}")
             }
         }
     }
@@ -189,13 +203,13 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         val user = _currentUser.value ?: return
         val file = File(localDraft.filePath)
         if (!file.exists()) {
-            _statusMessage.value = "Local draft audio file not found"
+            postStatus("Local draft audio file not found")
             return
         }
 
         viewModelScope.launch {
             _isLoading.value = true
-            _statusMessage.value = "Uploading take to room..."
+            postStatus("Uploading take to room...")
             val result = apiClient.uploadVoiceDraft(
                 file = file,
                 userId = user.id,
@@ -206,9 +220,9 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = false
             result.onSuccess { uploadedDraft ->
                 socketManager.shareDraft(room.id, user.id, uploadedDraft.id)
-                _statusMessage.value = "Shared \"${uploadedDraft.title}\" with room!"
+                postStatus("Shared \"${uploadedDraft.title}\" with room!")
             }.onFailure { err ->
-                _statusMessage.value = "Draft upload failed: ${err.message}"
+                postStatus("Draft upload failed: ${err.message}")
             }
         }
     }
@@ -310,11 +324,12 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             is SocketEvent.RoomDeleted -> {
                 _currentRoom.value = null
                 _spinState.value = SpinState()
-                _statusMessage.value = event.message
+                postStatus(event.message)
             }
 
             is SocketEvent.UserJoined -> {
-                _statusMessage.value = "${event.user.username} joined the room"
+                val name = event.user.username.ifBlank { "A participant" }
+                postStatus("👋 $name joined the room")
                 val room = _currentRoom.value ?: return
                 if (!event.participants.isNullOrEmpty()) {
                     _currentRoom.value = room.copy(
@@ -333,8 +348,9 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             is SocketEvent.UserLeft -> {
+                val name = event.username.ifBlank { "A participant" }
+                postStatus("👋 $name left the room")
                 val room = _currentRoom.value ?: return
-                _statusMessage.value = "${event.username.ifBlank { "A participant" }} left the room"
                 if (!event.participants.isNullOrEmpty()) {
                     _currentRoom.value = room.copy(
                         members = event.participants,
@@ -352,7 +368,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             is SocketEvent.DraftShared -> {
-                _statusMessage.value = "${event.draft.username ?: "A participant"} shared \"${event.draft.title}\""
+                postStatus("🎵 ${event.draft.username ?: "A participant"} shared \"${event.draft.title}\"")
                 val room = _currentRoom.value ?: return
                 val drafts = room.sharedDrafts.toMutableList()
                 drafts.removeAll { it.id == event.draft.id }
@@ -370,7 +386,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                     winner = null,
                     countdownSeconds = 5
                 )
-                _statusMessage.value = "Spin started for everyone in the room"
+                postStatus("🎰 Spin started for everyone in the room")
                 startCountdownTicker()
             }
 
@@ -409,7 +425,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                 if (user?.id == event.winner.userId) {
                     _currentUser.value = user.copy(virtualPoints = event.winner.totalPoints)
                 }
-                _statusMessage.value = "${event.winner.username} won +${event.winner.prizePoints} virtual points"
+                postStatus("🏆 ${event.winner.username} won +${event.winner.prizePoints} virtual points!")
             }
 
             is SocketEvent.SpinAborted -> {
@@ -419,11 +435,11 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
                     abortReason = event.reason,
                     countdownSeconds = 0
                 )
-                _statusMessage.value = "Spin stopped: ${event.reason}"
+                postStatus("Spin stopped: ${event.reason}")
             }
 
             is SocketEvent.SpinError -> {
-                _statusMessage.value = "Spin Error: ${event.message}"
+                postStatus("Spin Error: ${event.message}")
             }
 
             is SocketEvent.Connected -> {
@@ -454,6 +470,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearStatusMessage() {
+        statusClearJob?.cancel()
         _statusMessage.value = null
     }
 
