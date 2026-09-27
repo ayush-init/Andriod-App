@@ -4,17 +4,23 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Clean, crisp, light frosted canvas base -->
     <path
         android:pathData="M0,0h108v108h-108z"
-        android:fillColor="#0D0E17" />
-    <!-- Ambient ambient glow circle 1 (Deep Violet) -->
+        android:fillColor="#FAFAFC" />
+    <!-- Soft luminous pearl/periwinkle aura -->
     <path
-        android:pathData="M54,54m-42,0a42,42 0 1,1 84,0a42,42 0 1,1 -84,0"
-        android:fillAlpha="0.45"
-        android:fillColor="#4F46E5" />
-    <!-- Ambient glow circle 2 (Vibrant Rose/Magenta) -->
+        android:pathData="M54,54m-44,0a44,44 0 1,1 88,0a44,44 0 1,1 -88,0"
+        android:fillAlpha="0.75"
+        android:fillColor="#EEF2FF" />
+    <!-- Center soft glow accent -->
     <path
-        android:pathData="M65,45m-28,0a28,28 0 1,1 56,0a28,28 0 1,1 -56,0"
+        android:pathData="M54,54m-30,0a30,30 0 1,1 60,0a30,30 0 1,1 -60,0"
+        android:fillAlpha="0.65"
+        android:fillColor="#E0E7FF" />
+    <!-- Subtle warm bottom-right highlight -->
+    <path
+        android:pathData="M70,68m-22,0a22,22 0 1,1 44,0a22,22 0 1,1 -44,0"
         android:fillAlpha="0.35"
-        android:fillColor="#EC4899" />
+        android:fillColor="#FFE4E6" />
 </vector>

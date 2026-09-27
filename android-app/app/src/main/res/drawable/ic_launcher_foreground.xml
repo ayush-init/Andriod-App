@@ -7,44 +7,69 @@
     <group
         android:pivotX="54"
         android:pivotY="54">
-        <!-- Soundwave Equalizer Arc Left -->
+        <!-- Ambient Left Acoustic Wave Arcs (Cyan to Indigo) -->
         <path
-            android:pathData="M 32,45 C 30,50 30,58 32,63"
+            android:pathData="M 27,42 C 23,50 23,58 27,66"
             android:strokeWidth="3.2"
             android:strokeColor="#06B6D4"
             android:strokeLineCap="round" />
         <path
-            android:pathData="M 26,40 C 22,48 22,60 26,68"
-            android:strokeWidth="2.8"
-            android:strokeColor="#818CF8"
+            android:pathData="M 21,37 C 15,48 15,60 21,71"
+            android:strokeWidth="2.4"
+            android:strokeColor="#6366F1"
             android:strokeLineCap="round" />
 
-        <!-- Soundwave Equalizer Arc Right -->
+        <!-- Ambient Right Acoustic Wave Arcs (Rose to Magenta) -->
         <path
-            android:pathData="M 76,45 C 78,50 78,58 76,63"
+            android:pathData="M 81,42 C 85,50 85,58 81,66"
             android:strokeWidth="3.2"
+            android:strokeColor="#F43F5E"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M 87,37 C 93,48 93,60 87,71"
+            android:strokeWidth="2.4"
             android:strokeColor="#EC4899"
             android:strokeLineCap="round" />
-        <path
-            android:pathData="M 82,40 C 86,48 86,60 82,68"
-            android:strokeWidth="2.8"
-            android:strokeColor="#F472B6"
-            android:strokeLineCap="round" />
 
-        <!-- Star Glow Shadow -->
+        <!-- Soft drop shadow under the R glyph -->
         <path
-            android:pathData="M 54,32 L 58.5,44.5 L 71,45.5 L 61.5,53.5 L 64.5,66 L 54,59.5 L 43.5,66 L 46.5,53.5 L 37,45.5 L 49.5,44.5 Z"
-            android:fillAlpha="0.3"
+            android:pathData="M 37,30 L 61,30 C 72,30 79,37 79,46 C 79,52 74,58 65,60 L 76,82 L 67,82 L 57.5,62 L 48,62 L 48,82 L 39,82 Z"
+            android:fillAlpha="0.12"
+            android:fillColor="#1E1B4B" />
+
+        <!-- Vertical Stem Pillar (Deep Royal Indigo) -->
+        <path
+            android:pathData="M 37,27 C 37,25 38.5,24 40.5,24 L 46.5,24 C 48.5,24 49,25 49,27 L 49,79 C 49,81 48,82 46,82 L 40,82 C 38,82 37,81 37,79 Z"
+            android:fillColor="#4338CA" />
+
+        <!-- Upper Loop & Sweeping Musical Bowl (Vivid Violet) -->
+        <path
+            android:pathData="M 48,24 L 62,24 C 73,24 80,31 80,41 C 80,49 74,55 64,56 L 48,56 Z M 49,32 L 60,32 C 67,32 71,35.5 71,40.5 C 71,45.5 67,48.5 60,48.5 L 49,48.5 Z"
+            android:fillColor="#7C3AED" />
+
+        <!-- Dynamic Sweeping Leg with Angular Kick (Energetic Rose) -->
+        <path
+            android:pathData="M 52,52 L 63,52 L 75.5,77 C 77,80 75.5,82 72.5,82 L 65.5,82 C 63.5,82 62,80.5 61,78.5 L 50,57 Z"
             android:fillColor="#F43F5E" />
 
-        <!-- Center Glowing Star -->
+        <!-- Equalizer Sound Slice across loop interior -->
         <path
-            android:pathData="M 54,34 L 57.8,44.8 L 68.5,45.6 L 60.3,52.5 L 62.9,63.2 L 54,57.6 L 45.1,63.2 L 47.7,52.5 L 39.5,45.6 L 50.2,44.8 Z"
-            android:fillColor="#FFFFFF" />
+            android:pathData="M 44,40.5 L 58,40.5"
+            android:strokeWidth="2.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineCap="round" />
 
-        <!-- Microphone / Sound Pulse Core Dot -->
+        <!-- Decorative Sonic Core Dot -->
         <path
-            android:pathData="M 54,54 m -3.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
-            android:fillColor="#EC4899" />
+            android:pathData="M 49,52 m -2.5,0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0"
+            android:fillColor="#06B6D4" />
+
+        <!-- Brilliant Golden Star Sparkle on Upper Shoulder -->
+        <path
+            android:pathData="M 78,21 L 79.5,25.5 L 84,27 L 79.5,28.5 L 78,33 L 76.5,28.5 L 72,27 L 76.5,25.5 Z"
+            android:fillColor="#F59E0B" />
+        <path
+            android:pathData="M 78,27 m -1.2,0 a 1.2,1.2 0 1,0 2.4,0 a 1.2,1.2 0 1,0 -2.4,0"
+            android:fillColor="#FFFFFF" />
     </group>
 </vector>

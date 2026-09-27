@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ROXSTAR - Live Room Arena & Audio Studio</title>
+  <title>Rockstar - Live Audio Arena</title>
   
   <!-- Fonts & Lucide Icons (No simple emojis) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -115,13 +115,18 @@
       width: 36px;
       height: 36px;
       border-radius: 8px;
-      background: var(--accent);
-      color: #0a0d14;
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 1.1rem;
+      padding: 3px;
+    }
+
+    [data-theme="dark"] .brand-logo {
+      background: #1e2130;
+      border-color: #3b4261;
     }
 
     .brand-title {
@@ -754,10 +759,22 @@
   <!-- Top App Navigation -->
   <header class="app-header">
     <div class="brand-group">
-      <div class="brand-logo">R</div>
+      <div class="brand-logo">
+        <svg viewBox="0 0 108 108" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="54" cy="54" r="42" fill="#EEF2FF" opacity="0.8" />
+          <path d="M 27 42 C 23 50 23 58 27 66" stroke="#06B6D4" stroke-width="3.5" stroke-linecap="round" />
+          <path d="M 81 42 C 85 50 85 58 81 66" stroke="#F43F5E" stroke-width="3.5" stroke-linecap="round" />
+          <path d="M 37 27 C 37 25 38.5 24 40.5 24 L 46.5 24 C 48.5 24 49 25 49 27 L 49 79 C 49 81 48 82 46 82 L 40 82 C 38 82 37 81 37 79 Z" fill="#4338CA" />
+          <path d="M 48 24 L 62 24 C 73 24 80 31 80 41 C 80 49 74 55 64 56 L 48 56 Z M 49 32 L 60 32 C 67 32 71 35.5 71 40.5 C 71 45.5 67 48.5 60 48.5 L 49 48.5 Z" fill="#7C3AED" />
+          <path d="M 52 52 L 63 52 L 75.5 77 C 77 80 75.5 82 72.5 82 L 65.5 82 C 63.5 82 62 80.5 61 78.5 L 50 57 Z" fill="#F43F5E" />
+          <path d="M 44 40.5 L 58 40.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M 78 21 L 79.5 25.5 L 84 27 L 79.5 28.5 L 78 33 L 76.5 28.5 L 72 27 L 76.5 25.5 Z" fill="#F59E0B" />
+          <circle cx="78" cy="27" r="1.2" fill="#FFFFFF" />
+        </svg>
+      </div>
       <div>
-        <div class="brand-title">ROXSTAR</div>
-        <div class="brand-subtitle">Live Elimination Arena</div>
+        <div class="brand-title">Rockstar</div>
+        <div class="brand-subtitle">Live Audio Arena</div>
       </div>
     </div>
 
@@ -2172,7 +2189,7 @@
       refreshIcons();
 
       if (!currentUser || !currentUser.id) {
-        openAuthModal('Welcome to ROXSTAR', 'Please enter your name or nickname to enter the arena:', false);
+        openAuthModal('Welcome to Rockstar', 'Please enter your name or nickname to enter the arena:', false);
       }
     });
   </script>
