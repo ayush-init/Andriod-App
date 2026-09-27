@@ -1,7 +1,11 @@
 package com.roxstar.audio.ui.room
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,15 +13,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +38,7 @@ fun LobbyScreen(
     viewModel: RoomViewModel,
     modifier: Modifier = Modifier
 ) {
+    val glassColors = LocalGlassColors.current
     val currentUser by viewModel.currentUser.collectAsState()
     val activeRooms by viewModel.activeRooms.collectAsState()
     val serverUrl by viewModel.serverUrl.collectAsState()
@@ -44,251 +54,289 @@ fun LobbyScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
-            .padding(16.dp)
+            .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
-        // Top Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // Top Header Glass Card
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Multiplayer Rooms",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = glassColors.textPrimary
+                    )
+                    Text(
+                        text = "Collaborate & Play Spin Wheel",
+                        color = glassColors.textMuted,
+                        fontSize = 12.sp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(glassColors.glassSurface)
+                        .border(1.dp, glassColors.glassBorder, CircleShape)
+                        .clickable { showServerSettings = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Server Settings",
+                        tint = glassColors.textMuted,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 1. User Profile / Login Glass Card
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            contentPadding = PaddingValues(14.dp)
+        ) {
+            if (currentUser == null) {
                 Text(
-                    text = "👥 Multiplayer Rooms",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "Collaborate & Play Spin Wheel",
-                    color = TextMuted,
+                    text = "Enter username to enter multiplayer:",
+                    color = glassColors.textPrimary,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
                 )
-            }
-
-            IconButton(onClick = { showServerSettings = true }) {
-                Icon(Icons.Default.Settings, contentDescription = "Server Settings", tint = TextMuted)
-            }
-        }
-
-        // 1. User Profile / Login Card
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = CardBackground,
-            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                if (currentUser == null) {
-                    Text(
-                        text = "Enter your username to connect:",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = usernameInput,
-                            onValueChange = { usernameInput = it },
-                            placeholder = { Text("e.g. Alice") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = CardBorder
-                            )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = usernameInput,
+                        onValueChange = { usernameInput = it },
+                        placeholder = { Text("e.g. Alice") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = glassColors.textPrimary,
+                            unfocusedTextColor = glassColors.textPrimary,
+                            focusedBorderColor = RoxstarPrimary,
+                            unfocusedBorderColor = glassColors.glassBorder
                         )
-                        Button(
-                            onClick = { viewModel.loginOrRegister(usernameInput) },
-                            enabled = !isLoading && usernameInput.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                        ) {
-                            Text("Connect")
-                        }
-                    }
-                } else {
-                    val user = currentUser
-                    if (user != null) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(Primary),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = user.username.take(2).uppercase().ifEmpty { "U" },
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = user.username,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary,
-                                        fontSize = 16.sp
-                                    )
-                                    Text(
-                                        text = "🪙 ${user.virtualPoints} points",
-                                        color = Warning,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Success.copy(alpha = 0.2f)
-                            ) {
-                                Text(
-                                    text = "ONLINE",
-                                    color = Success,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 2. Create Room Card (Only when logged in)
-        if (currentUser != null) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = CardBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Create New Room",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Button(
+                        onClick = { viewModel.loginOrRegister(usernameInput) },
+                        enabled = !isLoading && usernameInput.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        OutlinedTextField(
-                            value = roomNameInput,
-                            onValueChange = { roomNameInput = it },
-                            placeholder = { Text("Room name...") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary,
-                                focusedBorderColor = Accent,
-                                unfocusedBorderColor = CardBorder
-                            )
-                        )
-                        Button(
-                            onClick = {
-                                viewModel.createRoom(roomNameInput)
-                                roomNameInput = ""
-                            },
-                            enabled = !isLoading && roomNameInput.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                        } else {
+                            Icon(Icons.Default.Login, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Create")
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 2b. Quick Join by Room ID Card
-        if (currentUser != null) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = CardBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Join Room by ID",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = joinRoomIdInput,
-                            onValueChange = { joinRoomIdInput = it },
-                            placeholder = { Text("Paste Room UUID...") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = CardBorder
-                            )
-                        )
-                        Button(
-                            onClick = {
-                                viewModel.joinRoom(joinRoomIdInput.trim())
-                            },
-                            enabled = !isLoading && joinRoomIdInput.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                        ) {
                             Text("Join")
                         }
                     }
                 }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(RoxstarPrimary, RoxstarAccent)
+                                    )
+                                )
+                                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = currentUser!!.displayName.ifBlank { currentUser!!.username },
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = glassColors.textPrimary
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = RoxstarAmber, modifier = Modifier.size(12.dp))
+                                Text(
+                                    text = "${currentUser!!.virtualPoints} VP",
+                                    color = RoxstarAmber,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    GlassBadge(
+                        text = "ONLINE",
+                        textColor = RoxstarSuccess,
+                        backgroundColor = RoxstarSuccess.copy(alpha = 0.15f),
+                        borderColor = RoxstarSuccess.copy(alpha = 0.35f)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // 2. Create Room & Join by ID (when logged in)
+        if (currentUser != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Create Room Glass Card
+                GlassCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(12.dp)
+                ) {
+                    Text(
+                        text = "Create Room",
+                        color = glassColors.textPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = roomNameInput,
+                        onValueChange = { roomNameInput = it },
+                        placeholder = { Text("Room name...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = glassColors.textPrimary,
+                            unfocusedTextColor = glassColors.textPrimary,
+                            focusedBorderColor = RoxstarAccent,
+                            unfocusedBorderColor = glassColors.glassBorder
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Button(
+                        onClick = {
+                            viewModel.createRoom(roomNameInput)
+                            roomNameInput = ""
+                        },
+                        enabled = !isLoading && roomNameInput.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RoxstarAccent),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Create", fontSize = 12.sp)
+                    }
+                }
 
-        // 3. Active Rooms List
+                // Join by ID Glass Card
+                GlassCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(12.dp)
+                ) {
+                    Text(
+                        text = "Join by ID",
+                        color = glassColors.textPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = joinRoomIdInput,
+                        onValueChange = { joinRoomIdInput = it.take(6) },
+                        placeholder = { Text("6-char ID") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = glassColors.textPrimary,
+                            unfocusedTextColor = glassColors.textPrimary,
+                            focusedBorderColor = RoxstarPrimary,
+                            unfocusedBorderColor = glassColors.glassBorder
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Button(
+                        onClick = {
+                            viewModel.joinRoom(joinRoomIdInput.trim())
+                            joinRoomIdInput = ""
+                        },
+                        enabled = !isLoading && joinRoomIdInput.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Join Room", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 3. Active Rooms Header & List
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Active Rooms (${activeRooms.size})",
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                fontSize = 16.sp
-            )
-            IconButton(onClick = { viewModel.refreshActiveRooms() }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextMuted)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Live Rooms",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = glassColors.textPrimary
+                )
+                GlassBadge(
+                    text = "${activeRooms.size}",
+                    textColor = RoxstarPrimary,
+                    backgroundColor = RoxstarPrimary.copy(alpha = 0.14f),
+                    borderColor = RoxstarPrimary.copy(alpha = 0.35f)
+                )
+            }
+
+            IconButton(
+                onClick = { viewModel.refreshActiveRooms() },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Refresh",
+                    tint = glassColors.textMuted
+                )
             }
         }
 
@@ -298,22 +346,42 @@ fun LobbyScreen(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(bottom = 70.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (currentUser == null) "Log in above to view rooms" else "No active rooms yet. Create one!",
-                    color = TextMuted,
-                    fontSize = 14.sp
-                )
+                GlassCard(
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(24.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Group,
+                            contentDescription = null,
+                            tint = glassColors.textMuted,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = if (currentUser == null) "Log in above to browse rooms" else "No active rooms yet. Create one!",
+                            color = glassColors.textMuted,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 items(activeRooms, key = { it.id.ifEmpty { "${it.name}_${it.hostId}" } }) { room ->
-                    RoomItemCard(
+                    GlassRoomItemCard(
                         room = room,
                         canJoin = currentUser != null,
                         onJoin = { viewModel.joinRoom(room.id) }
@@ -323,20 +391,24 @@ fun LobbyScreen(
         }
     }
 
-    // Server Settings Dialog
+    // Server Settings Dialog (with production cloud pre-set)
     if (showServerSettings) {
         AlertDialog(
             onDismissRequest = { showServerSettings = false },
-            containerColor = CardBackground,
+            containerColor = glassColors.canvas,
             title = {
-                Text("Backend Server URL", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Backend Server URL",
+                    color = glassColors.textPrimary,
+                    fontWeight = FontWeight.Bold
+                )
             },
             text = {
                 Column {
                     Text(
-                        "Configure backend host URL:",
-                        color = TextMuted,
-                        fontSize = 13.sp
+                        text = "Deployed backend with HTTPS (No USB required):",
+                        color = glassColors.textMuted,
+                        fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
@@ -344,40 +416,37 @@ fun LobbyScreen(
                         onValueChange = { serverUrlInput = it },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        )
+                            focusedTextColor = glassColors.textPrimary,
+                            unfocusedTextColor = glassColors.textPrimary,
+                            focusedBorderColor = RoxstarPrimary,
+                            unfocusedBorderColor = glassColors.glassBorder
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "USB is selected by default for local testing. Choose Cloud to use the deployed Roxstar backend.",
-                        color = TextMuted,
-                        fontSize = 11.sp
+                        text = "Quick Presets:",
+                        color = glassColors.textMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(
+                            selected = serverUrlInput.contains("roxstarvoice.duckdns.org"),
+                            onClick = { serverUrlInput = "https://roxstarvoice.duckdns.org" },
+                            label = { Text("🚀 Production Cloud (DuckDNS)") }
+                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             FilterChip(
-                                selected = serverUrlInput.contains("api.roxstar.audio"),
-                                onClick = { serverUrlInput = "https://api.roxstar.audio" },
-                                label = { Text("☁ Cloud") }
-                            )
-                            FilterChip(
-                                selected = serverUrlInput.contains("127.0.0.1") || serverUrlInput.contains("localhost"),
+                                selected = serverUrlInput.contains("127.0.0.1"),
                                 onClick = { serverUrlInput = "http://127.0.0.1:5000" },
-                                label = { Text("🔌 USB Cable") }
+                                label = { Text("🔌 USB (127.0.0.1)") }
                             )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             FilterChip(
                                 selected = serverUrlInput.contains("10.0.2.2"),
                                 onClick = { serverUrlInput = "http://10.0.2.2:5000" },
-                                label = { Text("Emulator") }
-                            )
-                            FilterChip(
-                                selected = serverUrlInput.contains("10.108.172.139"),
-                                onClick = { serverUrlInput = "http://10.108.172.139:5000" },
-                                label = { Text("Wi-Fi") }
+                                label = { Text("📱 Emulator") }
                             )
                         }
                     }
@@ -389,14 +458,15 @@ fun LobbyScreen(
                         viewModel.setServerUrl(serverUrlInput)
                         showServerSettings = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Save")
+                    Text("Save & Connect")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showServerSettings = false }) {
-                    Text("Cancel", color = TextMuted)
+                    Text("Cancel", color = glassColors.textMuted)
                 }
             }
         )
@@ -407,7 +477,7 @@ fun LobbyScreen(
         Snackbar(
             action = {
                 TextButton(onClick = { viewModel.clearStatusMessage() }) {
-                    Text("OK", color = Accent)
+                    Text("OK", color = RoxstarAccent)
                 }
             },
             modifier = Modifier.padding(16.dp)
@@ -418,73 +488,64 @@ fun LobbyScreen(
 }
 
 @Composable
-fun RoomItemCard(
+fun GlassRoomItemCard(
     room: Room,
     canJoin: Boolean,
     onJoin: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = CardBackground,
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+    val glassColors = LocalGlassColors.current
+    val context = LocalContext.current
+    val shortId = if (room.id.length >= 6) room.id.take(6) else room.id
+
+    GlassCard(
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = room.name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "👥 ${room.participantCount} online",
-                        fontSize = 12.sp,
-                        color = TextMuted
-                    )
-                }
-
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = room.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = glassColors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Button(
-                        onClick = onJoin,
-                        enabled = canJoin,
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Join")
-                    }
+                    GlassBadge(
+                        text = "👥 ${room.participantCount} online",
+                        textColor = RoxstarCyan,
+                        backgroundColor = RoxstarCyan.copy(alpha = 0.12f),
+                        borderColor = RoxstarCyan.copy(alpha = 0.3f)
+                    )
+                    Text(
+                        text = "•",
+                        color = glassColors.textMuted,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = "ID: $shortId",
+                        color = glassColors.textMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = Accent.copy(alpha = 0.08f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Accent.copy(alpha = 0.25f))
+            Button(
+                onClick = onJoin,
+                enabled = canJoin,
+                colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ID: ${room.id}",
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        color = Accent
-                    )
-                }
+                Text("Join")
             }
         }
     }

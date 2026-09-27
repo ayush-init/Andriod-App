@@ -1,9 +1,15 @@
 package com.roxstar.audio.ui.room
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -11,9 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
@@ -22,7 +30,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +48,8 @@ fun RoomScreen(
     viewModel: RoomViewModel,
     modifier: Modifier = Modifier
 ) {
+    val glassColors = LocalGlassColors.current
+    val context = LocalContext.current
     val currentUser by viewModel.currentUser.collectAsState()
     val spinState by viewModel.spinState.collectAsState()
     val playingDraftId by viewModel.playingDraftId.collectAsState()
@@ -57,54 +70,73 @@ fun RoomScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
-        // Room Top Bar
-        Surface(
-            color = CardBackground,
-            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-            modifier = Modifier.fillMaxWidth()
+        // Room Top Bar Glass Card
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            contentPadding = PaddingValues(12.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.leaveRoom() }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(glassColors.glassSurface)
+                            .border(1.dp, glassColors.glassBorder, CircleShape)
+                            .clickable { viewModel.leaveRoom() },
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Leave Room",
-                            tint = TextPrimary
+                            tint = glassColors.textPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
+
                     Column {
                         Text(
                             text = room.name,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = TextPrimary
+                            fontSize = 16.sp,
+                            color = glassColors.textPrimary
                         )
-                        Text(
-                            text = "👥 ${room.participantCount} online members",
-                            fontSize = 12.sp,
-                            color = TextMuted
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Accent.copy(alpha = 0.12f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Accent.copy(alpha = 0.3f))
+
+                        // Copyable ID badge
+                        val shortId = if (room.id.length >= 6) room.id.take(6) else room.id
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable {
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    cm.setPrimaryClip(ClipData.newPlainText("Room ID", room.id))
+                                    Toast.makeText(context, "Copied Room ID: ${room.id}", Toast.LENGTH_SHORT).show()
+                                }
                         ) {
                             Text(
-                                text = "ID: ${room.id}",
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                text = "ID: $shortId",
+                                fontFamily = FontFamily.Monospace,
                                 fontSize = 11.sp,
-                                color = Accent,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                color = RoxstarAccent,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy",
+                                tint = RoxstarAccent,
+                                modifier = Modifier.size(11.dp)
                             )
                         }
                     }
@@ -112,55 +144,48 @@ fun RoomScreen(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    IconButton(onClick = { viewModel.refreshCurrentRoom() }) {
+                    IconButton(
+                        onClick = { viewModel.refreshCurrentRoom() },
+                        modifier = Modifier.size(34.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Refresh Room",
-                            tint = TextMuted
+                            tint = glassColors.textMuted
                         )
                     }
+
                     if (room.hostId == currentUser?.id) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Accent.copy(alpha = 0.2f)
+                        GlassBadge(
+                            text = "HOST",
+                            textColor = RoxstarAccent,
+                            backgroundColor = RoxstarAccent.copy(alpha = 0.15f),
+                            borderColor = RoxstarAccent.copy(alpha = 0.4f)
+                        )
+                        TextButton(
+                            onClick = { showRemoveRoomDialog = true },
+                            contentPadding = PaddingValues(horizontal = 6.dp)
                         ) {
-                            Text(
-                                text = "⭐ YOU ARE HOST",
-                                color = Accent,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                        TextButton(onClick = { showRemoveRoomDialog = true }) {
-                            Text("Remove room", color = Danger, fontSize = 11.sp)
+                            Text("Delete", color = RoxstarDanger, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
         }
 
-        // Sub-Tab Row (Audio Studio / Spin Wheel)
-        TabRow(
-            selectedTabIndex = selectedSubTab,
-            containerColor = CardBackground,
-            contentColor = Primary
-        ) {
-            Tab(
-                selected = selectedSubTab == 0,
-                onClick = { selectedSubTab = 0 },
-                text = { Text("🎧 Room & Audio") },
-                icon = { Icon(Icons.Default.Headphones, contentDescription = null) }
-            )
-            Tab(
-                selected = selectedSubTab == 1,
-                onClick = { selectedSubTab = 1 },
-                text = { Text("🎡 Spin Wheel") },
-                icon = { Icon(Icons.Default.Casino, contentDescription = null) }
-            )
-        }
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Sub-Tab Segmented Pill ("🎧 Room & Audio" vs "🎡 Spin Wheel")
+        GlassSegmentedPill(
+            items = listOf("🎧 Room Audio", "🎡 Spin Wheel Arena"),
+            selectedIndex = selectedSubTab,
+            onSelect = { selectedSubTab = it },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Tab Content
         when (selectedSubTab) {
@@ -184,19 +209,19 @@ fun RoomScreen(
     if (showShareDraftDialog) {
         AlertDialog(
             onDismissRequest = { showShareDraftDialog = false },
-            containerColor = CardBackground,
+            containerColor = glassColors.canvas,
             title = {
                 Text(
                     text = "Share Voice Take with Room",
-                    color = TextPrimary,
+                    color = glassColors.textPrimary,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 if (localDrafts.isEmpty()) {
                     Text(
-                        text = "You have no saved voice takes yet. Use Studio to record with Clean, Echo, or Reverb DSP.",
-                        color = TextMuted
+                        text = "You have no saved voice takes yet. Go to Studio to record audio with DSP effects!",
+                        color = glassColors.textMuted
                     )
                 } else {
                     LazyColumn(
@@ -204,41 +229,39 @@ fun RoomScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         items(localDrafts, key = { it.id }) { draft ->
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = DarkBackground,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                            GlassCard(
+                                shape = RoundedCornerShape(14.dp),
+                                contentPadding = PaddingValues(10.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(10.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = draft.title,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary,
-                                            fontSize = 14.sp
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp,
+                                            color = glassColors.textPrimary
                                         )
                                         Text(
-                                            text = "${draft.effectApplied} • ${draft.formattedDuration}",
-                                            color = TextMuted,
-                                            fontSize = 12.sp
+                                            text = "${draft.effectApplied}  •  ${draft.formattedDuration}",
+                                            fontSize = 11.sp,
+                                            color = glassColors.textMuted
                                         )
                                     }
+
                                     Button(
                                         onClick = {
-                                            showShareDraftDialog = false
                                             viewModel.shareLocalVoiceDraft(draft)
+                                            showShareDraftDialog = false
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                                        shape = RoundedCornerShape(8.dp)
                                     ) {
-                                        Text("Share")
+                                        Text("Share", fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -249,26 +272,46 @@ fun RoomScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showShareDraftDialog = false }) {
-                    Text("Close", color = TextMuted)
+                    Text("Close", color = glassColors.textMuted)
                 }
             }
         )
     }
 
+    // Host Remove Room Dialog
     if (showRemoveRoomDialog) {
         AlertDialog(
             onDismissRequest = { showRemoveRoomDialog = false },
-            containerColor = CardBackground,
-            title = { Text("Remove this room?", color = TextPrimary, fontWeight = FontWeight.Bold) },
-            text = { Text("Everyone will be disconnected and see that the host removed the room.", color = TextMuted) },
+            containerColor = glassColors.canvas,
+            title = {
+                Text(
+                    text = "Delete Room?",
+                    color = glassColors.textPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "This will end the session and remove all participants. This action cannot be undone.",
+                    color = glassColors.textMuted
+                )
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    showRemoveRoomDialog = false
-                    viewModel.removeRoom()
-                }) { Text("Remove room", color = Danger) }
+                Button(
+                    onClick = {
+                        showRemoveRoomDialog = false
+                        viewModel.removeRoom()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RoxstarDanger),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Delete Room")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showRemoveRoomDialog = false }) { Text("Cancel", color = TextMuted) }
+                TextButton(onClick = { showRemoveRoomDialog = false }) {
+                    Text("Cancel", color = glassColors.textMuted)
+                }
             }
         )
     }
@@ -278,7 +321,7 @@ fun RoomScreen(
         Snackbar(
             action = {
                 TextButton(onClick = { viewModel.clearStatusMessage() }) {
-                    Text("OK", color = Accent)
+                    Text("OK", color = RoxstarAccent)
                 }
             },
             modifier = Modifier.padding(16.dp)
@@ -289,93 +332,104 @@ fun RoomScreen(
 }
 
 @Composable
-fun RoomAudioSection(
+private fun RoomAudioSection(
     room: Room,
     playingDraftId: String?,
     onTogglePlay: (SharedDraft) -> Unit,
     onOpenShareDialog: () -> Unit
 ) {
+    val glassColors = LocalGlassColors.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(bottom = 76.dp) // Dock clearance
     ) {
-        // Online Participants Pills
-        Text(
-            text = "Participants (${room.members.count { it.isOnline }})",
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Online Participants Strip
+        GlassCard(
+            shape = RoundedCornerShape(20.dp),
+            contentPadding = PaddingValues(12.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            room.members.forEach { member ->
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = CardBackground,
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (member.isOnline) Success else CardBorder
-                    )
-                ) {
+            Text(
+                text = "Members Online (${room.members.count { it.isOnline }})",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = glassColors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items(room.members, key = { it.userId }) { member ->
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(glassColors.glassSurfaceLight)
+                            .border(1.dp, glassColors.glassBorderSubtle, RoundedCornerShape(16.dp))
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(7.dp)
                                 .clip(CircleShape)
-                                .background(if (member.isOnline) Success else TextMuted)
+                                .background(if (member.isOnline) RoxstarSuccess else glassColors.textMuted)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = member.username,
-                            color = TextPrimary,
+                            color = if (member.isOnline) glassColors.textPrimary else glassColors.textMuted,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
         }
 
-        Divider(color = CardBorder, modifier = Modifier.padding(bottom = 14.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Shared Voice Drafts Header + Share Action
+        // Shared Voice Takes Header + Share Action
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Shared Audio Takes (${room.sharedDrafts.size})",
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                fontSize = 16.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Shared Audio Takes",
+                    fontWeight = FontWeight.Bold,
+                    color = glassColors.textPrimary,
+                    fontSize = 16.sp
+                )
+                GlassBadge(
+                    text = "${room.sharedDrafts.size}",
+                    textColor = RoxstarAccent,
+                    backgroundColor = RoxstarAccent.copy(alpha = 0.14f),
+                    borderColor = RoxstarAccent.copy(alpha = 0.35f)
+                )
+            }
 
             Button(
                 onClick = onOpenShareDialog,
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Share Take")
+                Text("Share Take", fontSize = 13.sp)
             }
         }
 
-        // Shared Drafts Playlist
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Shared Takes Playlist
         if (room.sharedDrafts.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -383,24 +437,31 @@ fun RoomAudioSection(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.GraphicEq,
-                        contentDescription = null,
-                        tint = TextMuted,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "No audio takes shared in this room yet.",
-                        color = TextMuted,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = "Tap \"Share Take\" to broadcast your echo draft!",
-                        color = TextMuted,
-                        fontSize = 12.sp
-                    )
+                GlassCard(
+                    shape = RoundedCornerShape(22.dp),
+                    contentPadding = PaddingValues(24.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = null,
+                            tint = glassColors.textMuted,
+                            modifier = Modifier.size(44.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No audio takes shared in this room yet",
+                            color = glassColors.textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tap \"Share Take\" to broadcast your recordings!",
+                            color = glassColors.textMuted,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         } else {
@@ -415,7 +476,7 @@ fun RoomAudioSection(
                     }
                 ) { _, draft ->
                     val isPlaying = playingDraftId == draft.id
-                    SharedDraftCard(
+                    GlassSharedDraftCard(
                         draft = draft,
                         isPlaying = isPlaying,
                         onTogglePlay = { onTogglePlay(draft) }
@@ -427,35 +488,43 @@ fun RoomAudioSection(
 }
 
 @Composable
-fun SharedDraftCard(
+fun GlassSharedDraftCard(
     draft: SharedDraft,
     isPlaying: Boolean,
     onTogglePlay: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = CardBackground,
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+    val glassColors = LocalGlassColors.current
+
+    GlassCard(
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(
-                onClick = onTogglePlay,
+            Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (isPlaying) Accent else Primary)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isPlaying) {
+                            Brush.linearGradient(listOf(RoxstarAccent, RoxstarViolet))
+                        } else {
+                            Brush.linearGradient(listOf(RoxstarPrimary, RoxstarViolet))
+                        }
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                    .clickable { onTogglePlay() },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -465,29 +534,23 @@ fun SharedDraftCard(
                 Text(
                     text = draft.title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = TextPrimary
+                    fontSize = 14.sp,
+                    color = glassColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Shared by ${draft.username ?: "Player"} • ${draft.formattedDuration}",
-                    color = TextMuted,
-                    fontSize = 12.sp
+                    text = "Shared by ${draft.username ?: "Player"}  •  ${draft.formattedDuration}",
+                    color = glassColors.textMuted,
+                    fontSize = 11.sp
                 )
             }
 
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = if (draft.effectApplied == "ECHO") Accent.copy(alpha = 0.2f) else Primary.copy(alpha = 0.2f)
-            ) {
-                Text(
-                    text = draft.effectApplied,
-                    color = if (draft.effectApplied == "ECHO") Accent else Primary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
+            GlassBadge(
+                text = draft.effectApplied,
+                textColor = if (draft.effectApplied == "ECHO") RoxstarAccent else RoxstarPrimary,
+                backgroundColor = if (draft.effectApplied == "ECHO") RoxstarAccent.copy(alpha = 0.15f) else RoxstarPrimary.copy(alpha = 0.15f),
+                borderColor = if (draft.effectApplied == "ECHO") RoxstarAccent.copy(alpha = 0.35f) else RoxstarPrimary.copy(alpha = 0.35f)
+            )
         }
     }
 }

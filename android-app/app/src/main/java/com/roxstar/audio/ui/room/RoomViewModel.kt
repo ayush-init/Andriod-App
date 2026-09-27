@@ -28,7 +28,11 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     val localDraftsFlow = localDraftRepo.draftsFlow
     val isConnected: StateFlow<Boolean> = socketManager.isConnected
 
-    private val _serverUrl = MutableStateFlow("http://127.0.0.1:5000")
+    private val prefs = application.getSharedPreferences("roxstar_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val _serverUrl = MutableStateFlow(
+        prefs.getString("server_url", "https://roxstarvoice.duckdns.org") ?: "https://roxstarvoice.duckdns.org"
+    )
     val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -57,6 +61,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
     private var countdownJob: Job? = null
 
     init {
+        apiClient.baseUrl = _serverUrl.value
         // Collect socket events
         viewModelScope.launch {
             socketManager.events.collect { event ->
@@ -69,6 +74,7 @@ class RoomViewModel(application: Application) : AndroidViewModel(application) {
         val trimmed = url.trim().removeSuffix("/")
         _serverUrl.value = trimmed
         apiClient.baseUrl = trimmed
+        prefs.edit().putString("server_url", trimmed).apply()
         Log.i(TAG, "Server URL updated to: $trimmed")
     }
 

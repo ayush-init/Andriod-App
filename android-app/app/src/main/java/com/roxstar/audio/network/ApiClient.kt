@@ -21,7 +21,7 @@ class ApiClient {
     private val TAG = "ApiClient"
     private val gson = Gson()
 
-    var baseUrl: String = "http://127.0.0.1:5000" // USB/adb reverse default
+    var baseUrl: String = "https://roxstarvoice.duckdns.org"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

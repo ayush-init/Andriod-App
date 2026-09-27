@@ -1,8 +1,5 @@
 package com.roxstar.audio.ui.room
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -19,7 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -39,12 +36,14 @@ fun SpinWheelArena(
     onStartSpin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isHost = room.hostId == currentUser?.id
+    val glassColors = LocalGlassColors.current
+    val isHost = currentUser?.id == room.hostId
     val onlineCount = room.members.count { it.isOnline }
-    val canStartSpin = isHost && onlineCount >= 3 && spinState.status != "RUNNING"
+    val canStartSpin = isHost && spinState.status != "RUNNING" && onlineCount >= 3
 
     var showWinnerDialog by remember { mutableStateOf(false) }
 
+    // When spin completes and winner is chosen, show announcement modal
     LaunchedEffect(spinState.status) {
         if (spinState.status == "COMPLETED" && spinState.winner != null) {
             showWinnerDialog = true
@@ -54,19 +53,17 @@ fun SpinWheelArena(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
-            .padding(16.dp),
+            .padding(bottom = 76.dp), // Dock clearance
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Status & Countdown Header
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = CardBackground,
-            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+        // Status & Countdown Header Glass Card
+        GlassCard(
+            shape = RoundedCornerShape(24.dp),
+            contentPadding = PaddingValues(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -78,31 +75,26 @@ fun SpinWheelArena(
                         text = "🎡 Spin Wheel Arena",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = glassColors.textPrimary
                     )
 
                     // Status Pill
-                    val statusColor = when (spinState.status) {
-                        "RUNNING" -> Danger
-                        "COMPLETED" -> Success
-                        "ABORTED" -> Warning
-                        else -> Primary
+                    val (statusColor, statusBg) = when (spinState.status) {
+                        "RUNNING" -> Pair(RoxstarDanger, RoxstarDanger.copy(alpha = 0.15f))
+                        "COMPLETED" -> Pair(RoxstarSuccess, RoxstarSuccess.copy(alpha = 0.15f))
+                        "ABORTED" -> Pair(RoxstarAmber, RoxstarAmber.copy(alpha = 0.15f))
+                        else -> Pair(RoxstarPrimary, RoxstarPrimary.copy(alpha = 0.15f))
                     }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = statusColor.copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            text = spinState.status,
-                            color = statusColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
-                    }
+
+                    GlassBadge(
+                        text = spinState.status,
+                        textColor = statusColor,
+                        backgroundColor = statusBg,
+                        borderColor = statusColor.copy(alpha = 0.4f)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Countdown Timer when Running
                 if (spinState.status == "RUNNING") {
@@ -113,34 +105,34 @@ fun SpinWheelArena(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = Accent,
-                        trackColor = CardBorder
+                        color = RoxstarAccent,
+                        trackColor = glassColors.glassBorderSubtle
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "⏱️ Next elimination in ${spinState.countdownSeconds}s",
+                        text = "⏱ Next elimination in ${spinState.countdownSeconds}s",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Accent
+                        color = RoxstarAccent
                     )
                 } else if (spinState.status == "ABORTED") {
                     Text(
                         text = "⚠️ Spin Aborted: ${spinState.abortReason ?: "Insufficient Players"}",
-                        color = Warning,
+                        color = RoxstarAmber,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 } else {
                     Text(
-                        text = "Elimination game: Last remaining player wins +50 virtual points!",
-                        color = TextMuted,
+                        text = "Elimination battle: Last remaining player wins +50 virtual points!",
+                        color = glassColors.textMuted,
                         fontSize = 13.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Players Grid / Seat Cards
         val allParticipants = if (spinState.status == "RUNNING" || spinState.status == "COMPLETED") {
@@ -151,8 +143,8 @@ fun SpinWheelArena(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -160,7 +152,7 @@ fun SpinWheelArena(
             items(allParticipants, key = { it.userId }) { player ->
                 val isEliminated = spinState.eliminatedPlayers.any { it.userId == player.userId }
                 val isWinner = spinState.winner?.userId == player.userId
-                PlayerSeatCard(
+                GlassPlayerSeatCard(
                     player = player,
                     isEliminated = isEliminated,
                     isWinner = isWinner,
@@ -181,10 +173,10 @@ fun SpinWheelArena(
                     onClick = onStartSpin,
                     enabled = canStartSpin,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Accent,
-                        disabledContainerColor = CardBorder
+                        containerColor = RoxstarAccent,
+                        disabledContainerColor = glassColors.glassSurface
                     ),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -201,22 +193,22 @@ fun SpinWheelArena(
                 if (onlineCount < 3) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Requires at least 3 online players to start (Currently: $onlineCount)",
-                        color = Warning,
+                        text = "Requires at least 3 online players (Currently: $onlineCount)",
+                        color = RoxstarAmber,
                         fontSize = 12.sp
                     )
                 }
             } else {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = CardBackground,
+                GlassCard(
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Waiting for room host to start the spin...",
-                        color = TextMuted,
+                        text = "Waiting for room host to initiate spin battle...",
+                        color = glassColors.textMuted,
                         fontSize = 13.sp,
-                        modifier = Modifier.padding(14.dp)
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -228,19 +220,19 @@ fun SpinWheelArena(
         val winner = spinState.winner
         AlertDialog(
             onDismissRequest = { showWinnerDialog = false },
-            containerColor = CardBackground,
+            containerColor = glassColors.canvas,
             icon = {
                 Icon(
                     Icons.Default.EmojiEvents,
                     contentDescription = "Trophy",
-                    tint = Warning,
-                    modifier = Modifier.size(48.dp)
+                    tint = RoxstarAmber,
+                    modifier = Modifier.size(52.dp)
                 )
             },
             title = {
                 Text(
-                    text = "👑 WINNER CROWNED!",
-                    color = Warning,
+                    text = "👑 ARENA WINNER!",
+                    color = RoxstarAmber,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
@@ -249,20 +241,20 @@ fun SpinWheelArena(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = winner.username,
-                        color = TextPrimary,
+                        color = glassColors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Awarded +${winner.prizePoints} Virtual Points!",
-                        color = Success,
+                        color = RoxstarSuccess,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                     Text(
-                        text = "New Balance: ${winner.totalPoints} pts",
-                        color = TextMuted,
+                        text = "New Balance: ${winner.totalPoints} VP",
+                        color = glassColors.textMuted,
                         fontSize = 13.sp
                     )
                 }
@@ -270,7 +262,8 @@ fun SpinWheelArena(
             confirmButton = {
                 Button(
                     onClick = { showWinnerDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = RoxstarPrimary),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Awesome!")
                 }
@@ -280,37 +273,42 @@ fun SpinWheelArena(
 }
 
 @Composable
-fun PlayerSeatCard(
+fun GlassPlayerSeatCard(
     player: RoomMember,
     isEliminated: Boolean,
     isWinner: Boolean,
     isHost: Boolean
 ) {
-    val cardColor = when {
-        isWinner -> Warning.copy(alpha = 0.15f)
-        isEliminated -> Danger.copy(alpha = 0.1f)
-        else -> CardBackground
-    }
-    val borderColor = when {
-        isWinner -> Warning
-        isEliminated -> Danger.copy(alpha = 0.4f)
-        else -> CardBorder
+    val glassColors = LocalGlassColors.current
+
+    val (cardBg, cardBorder) = when {
+        isWinner -> Pair(RoxstarAmber.copy(alpha = 0.18f), RoxstarAmber)
+        isEliminated -> Pair(RoxstarDanger.copy(alpha = 0.10f), RoxstarDanger.copy(alpha = 0.35f))
+        else -> Pair(glassColors.glassSurface, glassColors.glassBorder)
     }
 
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = cardColor,
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
+    GlassCard(
+        shape = RoundedCornerShape(20.dp),
+        backgroundColor = cardBg,
+        borderColor = cardBorder,
+        contentPadding = PaddingValues(12.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (isWinner) Warning else if (isEliminated) Danger else Primary),
+                    .background(
+                        when {
+                            isWinner -> Brush.linearGradient(listOf(RoxstarAmber, Color(0xFFD97706)))
+                            isEliminated -> Brush.linearGradient(listOf(RoxstarDanger, Color(0xFFB91C1C)))
+                            else -> Brush.linearGradient(listOf(RoxstarPrimary, RoxstarViolet))
+                        }
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -327,7 +325,7 @@ fun PlayerSeatCard(
                 text = player.username,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = if (isEliminated) TextMuted else TextPrimary,
+                color = if (isEliminated) glassColors.textMuted else glassColors.textPrimary,
                 textDecoration = if (isEliminated) TextDecoration.LineThrough else TextDecoration.None
             )
 
@@ -335,36 +333,47 @@ fun PlayerSeatCard(
 
             when {
                 isWinner -> {
-                    Text(
+                    GlassBadge(
                         text = "👑 WINNER",
-                        color = Warning,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        textColor = RoxstarAmber,
+                        backgroundColor = RoxstarAmber.copy(alpha = 0.2f),
+                        borderColor = RoxstarAmber.copy(alpha = 0.5f)
                     )
                 }
                 isEliminated -> {
-                    Text(
-                        text = "💥 ELIMINATED",
-                        color = Danger,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                    GlassBadge(
+                        text = "💥 OUT",
+                        textColor = RoxstarDanger,
+                        backgroundColor = RoxstarDanger.copy(alpha = 0.2f),
+                        borderColor = RoxstarDanger.copy(alpha = 0.5f)
                     )
                 }
                 isHost -> {
-                    Text(
+                    GlassBadge(
                         text = "⭐ HOST",
-                        color = Accent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        textColor = RoxstarAccent,
+                        backgroundColor = RoxstarAccent.copy(alpha = 0.2f),
+                        borderColor = RoxstarAccent.copy(alpha = 0.5f)
                     )
                 }
                 else -> {
-                    Text(
-                        text = if (player.isOnline) "🟢 ONLINE" else "⚪ OFFLINE",
-                        color = if (player.isOnline) Success else TextMuted,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (player.isOnline) RoxstarSuccess else glassColors.textMuted)
+                        )
+                        Text(
+                            text = if (player.isOnline) "Online" else "Offline",
+                            color = if (player.isOnline) RoxstarSuccess else glassColors.textMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

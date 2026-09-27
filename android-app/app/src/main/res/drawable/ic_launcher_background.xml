@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#0D0E17" />
+    <!-- Ambient ambient glow circle 1 (Deep Violet) -->
+    <path
+        android:pathData="M54,54m-42,0a42,42 0 1,1 84,0a42,42 0 1,1 -84,0"
+        android:fillAlpha="0.45"
+        android:fillColor="#4F46E5" />
+    <!-- Ambient glow circle 2 (Vibrant Rose/Magenta) -->
+    <path
+        android:pathData="M65,45m-28,0a28,28 0 1,1 56,0a28,28 0 1,1 -56,0"
+        android:fillAlpha="0.35"
+        android:fillColor="#EC4899" />
+</vector>

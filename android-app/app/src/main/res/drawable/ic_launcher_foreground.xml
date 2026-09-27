@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54">
+        <!-- Soundwave Equalizer Arc Left -->
+        <path
+            android:pathData="M 32,45 C 30,50 30,58 32,63"
+            android:strokeWidth="3.2"
+            android:strokeColor="#06B6D4"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M 26,40 C 22,48 22,60 26,68"
+            android:strokeWidth="2.8"
+            android:strokeColor="#818CF8"
+            android:strokeLineCap="round" />
+
+        <!-- Soundwave Equalizer Arc Right -->
+        <path
+            android:pathData="M 76,45 C 78,50 78,58 76,63"
+            android:strokeWidth="3.2"
+            android:strokeColor="#EC4899"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M 82,40 C 86,48 86,60 82,68"
+            android:strokeWidth="2.8"
+            android:strokeColor="#F472B6"
+            android:strokeLineCap="round" />
+
+        <!-- Star Glow Shadow -->
+        <path
+            android:pathData="M 54,32 L 58.5,44.5 L 71,45.5 L 61.5,53.5 L 64.5,66 L 54,59.5 L 43.5,66 L 46.5,53.5 L 37,45.5 L 49.5,44.5 Z"
+            android:fillAlpha="0.3"
+            android:fillColor="#F43F5E" />
+
+        <!-- Center Glowing Star -->
+        <path
+            android:pathData="M 54,34 L 57.8,44.8 L 68.5,45.6 L 60.3,52.5 L 62.9,63.2 L 54,57.6 L 45.1,63.2 L 47.7,52.5 L 39.5,45.6 L 50.2,44.8 Z"
+            android:fillColor="#FFFFFF" />
+
+        <!-- Microphone / Sound Pulse Core Dot -->
+        <path
+            android:pathData="M 54,54 m -3.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+            android:fillColor="#EC4899" />
+    </group>
+</vector>
